@@ -11,17 +11,17 @@ public class BookSpecification {
 
     public Specification<Book> filterByTitle(String search) {
         return ((root, criteriaQuery, criteriaBuilder) ->{
-            return criteriaBuilder.like(root.get(Book_.TITLE.toLowerCase()), "%" + search.toLowerCase() + "%");
+            return criteriaBuilder.like(criteriaBuilder.lower(root.get(Book_.TITLE)), "%" + search.toLowerCase() + "%");
         }); 
     }
     public Specification<Book> filterByAuthor(String search) {
         return ((root, criteriaQuery, criteriaBuilder) ->{
-            return criteriaBuilder.like(root.get(Book_.AUTHOR.toLowerCase()), "%" + search.toLowerCase() + "%");
+            return criteriaBuilder.like(criteriaBuilder.lower(root.get(Book_.AUTHOR)), "%" + search.toLowerCase() + "%");
         }); 
     }
     public Specification<Book> filterByPublisher(String search) {
         return ((root, criteriaQuery, criteriaBuilder) ->{
-            return criteriaBuilder.like(root.get(Book_.PUBLISHER.toLowerCase()), "%" + search.toLowerCase() + "%");
+            return criteriaBuilder.like(criteriaBuilder.lower(root.get(Book_.PUBLISHER)), "%" + search.toLowerCase() + "%");
         }); 
     }
 

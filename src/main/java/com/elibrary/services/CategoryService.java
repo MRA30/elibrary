@@ -72,4 +72,8 @@ public class CategoryService {
     public void delete(long id){
         categoryRepo.deleteById(id);
     }
+
+    public boolean isCategoryExist(long id){
+        return categoryRepo.existsById(id);
+    }
 }

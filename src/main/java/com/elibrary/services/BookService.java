@@ -13,7 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.elibrary.dto.request.BookRequest;
+import com.elibrary.dto.request.BookRequestdto;
 import com.elibrary.dto.response.BookResponse;
 import com.elibrary.dto.response.CategoryResponse;
 import com.elibrary.model.entity.Book;
@@ -62,8 +62,8 @@ public class BookService {
         return bookResponse;
     }
 
-    public BookRequest convertBookResponseToBookRequest(BookResponse bookResponse){
-        BookRequest bookRequest = new BookRequest();
+    public BookRequestdto convertBookResponseToBookRequest(BookResponse bookResponse){
+        BookRequestdto bookRequest = new BookRequestdto();
         bookRequest.setTitle(bookResponse.getTitle());
         bookRequest.setAuthor(bookResponse.getAuthor());
         bookRequest.setPublisher(bookResponse.getPublisher());
@@ -73,7 +73,7 @@ public class BookService {
         return bookRequest;
     }
 
-    public BookResponse createBook(BookRequest request){
+    public BookResponse createBook(BookRequestdto request){
         Book book = new Book();
         book.setTitle(request.getTitle());
         book.setAuthor(request.getAuthor());
@@ -86,7 +86,7 @@ public class BookService {
         return convertBookToBookResponse(book);
     }
 
-    public BookResponse updateBook(long id, BookRequest request){
+    public BookResponse updateBook(long id, BookRequestdto request){
         Book book = findById(id);
         book.setTitle(request.getTitle());
         book.setAuthor(request.getAuthor());
