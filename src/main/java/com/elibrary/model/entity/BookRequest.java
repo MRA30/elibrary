@@ -5,8 +5,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -27,12 +25,11 @@ public class BookRequest {
     @Column(name = "title", nullable = false, length = 100)
     private String title;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Column(name = "isAvailable", nullable = false, columnDefinition = "boolean default false")
-    private Boolean isAvailable;
+    private boolean isAvailable;
 
     @Column(name = "description", length = 255)
     private String description;

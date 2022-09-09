@@ -12,6 +12,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
@@ -64,9 +65,11 @@ public class User implements UserDetails {
     private String image;
 
     @OneToMany(targetEntity = Borrow.class, cascade = CascadeType.ALL)
+    @JoinColumn(name = "borrow_id", referencedColumnName = "id")
     private List<Borrow> borrows;
 
     @OneToMany(targetEntity = BookRequest.class, cascade = CascadeType.ALL)
+    @JoinColumn(name = "bookRequest_id", referencedColumnName = "id")
     private List<BookRequest> bookRequests;
 
     @Override

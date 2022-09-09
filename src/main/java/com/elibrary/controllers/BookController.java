@@ -22,7 +22,6 @@ import com.elibrary.dto.request.BookRequestdto;
 import com.elibrary.dto.response.BookResponse;
 import com.elibrary.dto.response.ResponseData;
 import com.elibrary.services.BookService;
-import com.elibrary.services.CategoryService;
 
 @RestController
 @RequestMapping("/books")
@@ -30,9 +29,6 @@ public class BookController {
     
     @Autowired
     private BookService bookService;
-
-    @Autowired
-    private CategoryService categoryService;
 
     @PostMapping("/add")
     public ResponseEntity<ResponseData<BookResponse>> addBook(@Valid @RequestBody BookRequestdto bookRequestdto, Errors errors){
@@ -42,12 +38,6 @@ public class BookController {
                 for (ObjectError error : errors.getAllErrors()) {
                     responseData.getMessages().add(error.getDefaultMessage());
                 }
-                responseData.setStatus(false);
-                responseData.setPayload(null);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseData);
-            }
-            if(!categoryService.isCategoryExist(bookRequestdto.getCategory())){
-                responseData.getMessages().add("Category not found");
                 responseData.setStatus(false);
                 responseData.setPayload(null);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseData);
@@ -71,6 +61,7 @@ public class BookController {
             BookResponse bookResponse = bookService.createBook(bookRequestdto);
             responseData.setStatus(true);
             responseData.setPayload(bookResponse);
+            responseData.getMessages().add("Book added");
             return ResponseEntity.ok(responseData);
         }catch(Exception ex){
             responseData.setStatus(false);

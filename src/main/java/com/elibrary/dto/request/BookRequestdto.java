@@ -3,6 +3,8 @@ package com.elibrary.dto.request;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+import com.elibrary.validators.CategoryIdValidation;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,6 +31,7 @@ public class BookRequestdto {
     @NotNull(message = "quantity must not be empty")
     private Integer quantity;
 
+    @CategoryIdValidation(message = "category does not exist")
     @NotNull(message = "category must not be empty")
     private Long category;
 }

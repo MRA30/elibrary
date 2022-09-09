@@ -12,9 +12,7 @@ public class BookRequestRequest {
     @NotEmpty(message = "Book Title must not be empty")
     private String title;
 
-    @NotEmpty(message = "userId must not be empty")
     private Long userId;
-    
     private boolean isAvailable;
     private String description;
     

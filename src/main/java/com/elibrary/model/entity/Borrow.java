@@ -7,8 +7,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -25,14 +23,12 @@ public class Borrow {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @ManyToOne
-    @JoinColumn(name = "book_id", nullable = false, referencedColumnName = "id")
-    private Book book;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false, referencedColumnName = "id")
-    private User user;
+    @Column(name = "book_id", nullable = false)
+    private Long bookId;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Column(name = "borrow_date", nullable = false)
     private Date borrowDate;
