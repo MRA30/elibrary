@@ -1,23 +1,21 @@
 package com.elibrary.services;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.elibrary.dto.request.BookRequestRequest;
-import com.elibrary.dto.response.BookRequestReponse;
+import com.elibrary.dto.response.BookRequestResponse;
 import com.elibrary.model.entity.BookRequest;
+import com.elibrary.model.entity.User;
 import com.elibrary.model.repos.BookRequestRepo;
-import com.elibrary.model.specification.BookRequestSpecification;
 
 @Service
 @Transactional
@@ -27,13 +25,15 @@ public class BookRequestService {
     private BookRequestRepo bookRequestRepo;
 
     @Autowired
-    private BookRequestSpecification bookRequestSpecification;
+    private UserService userService;
 
-    public BookRequestReponse convertBookRequestToBookRequestReponse(BookRequest request){
-        BookRequestReponse bookRequestReponse = new BookRequestReponse();
+    public BookRequestResponse convertBookRequestToBookRequestReponse(long id, BookRequest request){
+        BookRequestResponse bookRequestReponse = new BookRequestResponse();
         bookRequestReponse.setId(request.getId());
 
-        bookRequestReponse.setUserId(request.getUserId());;
+        User user = userService.findById(id);
+        bookRequestReponse.setUserId(request.getUserId());
+        bookRequestReponse.setName(user.getName());;
         bookRequestReponse.setTitle(request.getTitle());
         bookRequestReponse.setAvailable(request.isAvailable());
         bookRequestReponse.setDescription(request.getDescription());
@@ -48,47 +48,41 @@ public class BookRequestService {
         return null;
     }
 
-    public BookRequestReponse findByIdResponse(long id){
-        Optional<BookRequest> bookRequest = bookRequestRepo.findById(id);
-        if(bookRequest.isPresent()){
-            return convertBookRequestToBookRequestReponse(bookRequest.get());
-        }
-        return null;
-    }
-
-    public BookRequestReponse createBookRequest(long id, BookRequestRequest request){
+    public BookRequestResponse createBookRequest(long id, BookRequestRequest request){
         BookRequest bookRequest = new BookRequest();
         bookRequest.setTitle(request.getTitle());
         bookRequest.setUserId(id);
         bookRequest.setAvailable(false);
         bookRequest.setDescription(request.getDescription());
-        return convertBookRequestToBookRequestReponse(bookRequestRepo.save(bookRequest));
+        return convertBookRequestToBookRequestReponse(id,bookRequestRepo.save(bookRequest));
     }
 
-    public BookRequestReponse updateBookRequest(long id,BookRequestRequest request){
+    public BookRequestResponse updateBookRequest(long id,BookRequestRequest request){
         BookRequest bookRequest = findByid(id);
+        long userId = request.getUserId();
         bookRequest.setAvailable(request.isAvailable());
         bookRequest.setDescription(request.getDescription());
-        return convertBookRequestToBookRequestReponse(bookRequestRepo.save(bookRequest));
+        return convertBookRequestToBookRequestReponse(userId, bookRequestRepo.save(bookRequest));
     }
 
-    public Page<BookRequestReponse> searchBookRequest(String search, Integer page, Integer size, String sortBy){
+    public Page<BookRequestResponse> searchBookRequest(String search, Integer page, Integer size, String sortBy){
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
-        Page<BookRequest> listBookRequest = bookRequestRepo.findAll(bookRequestSpecification.filterByTitle(search), pageable);
-        int totalElements = (int) listBookRequest.getTotalElements();
-        return new PageImpl<>(listBookRequest.stream().map(this::convertBookRequestToBookRequestReponse)
-                                        .collect(Collectors.toList()), pageable, totalElements);
+        Page<BookRequestResponse> listBookRequest = bookRequestRepo.findByTitleContainingIgnoreCase(search.toLowerCase(), pageable);
+        return listBookRequest;
     }
 
-    public Page <BookRequestReponse> filterById(String search, long userId, Integer page, Integer size, String sortBy){
+    public Page <BookRequestResponse> filterById(String search, long userId, Integer page, Integer size, String sortBy){
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
-        Page<BookRequest> listBookRequest = bookRequestRepo.findAll(bookRequestSpecification.searchByTitleAndFilterByUserId(search, userId), pageable);
-        int totalElements = (int) listBookRequest.getTotalElements();
-        return new PageImpl<>(listBookRequest.stream().map(this::convertBookRequestToBookRequestReponse)
-                                        .collect(Collectors.toList()), pageable, totalElements);
+        Page<BookRequestResponse> listBookRequest = bookRequestRepo.findByTitleContainingIgnoreCaseMember(search.toLowerCase(), userId, pageable);
+        return listBookRequest;
     }
 
     public void delete(long id){
         bookRequestRepo.deleteById(id);
+    }
+
+    public BookRequestResponse filterById(long id){
+        BookRequestResponse bRequestReponse = bookRequestRepo.findByIdBookRequest(id);
+        return bRequestReponse;
     }
 }
