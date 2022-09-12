@@ -1,6 +1,5 @@
 package com.elibrary.controllers;
 
-
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +29,7 @@ public class BookController {
     @Autowired
     private BookService bookService;
 
+
     @PostMapping("/add")
     public ResponseEntity<ResponseData<BookResponse>> addBook(@Valid @RequestBody BookRequestdto bookRequestdto, Errors errors){
         ResponseData<BookResponse> responseData = new ResponseData<>();
@@ -42,27 +42,30 @@ public class BookController {
                 responseData.setPayload(null);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseData);
             }
-            BookResponse bookResponseFind = bookService.findByTitleResponse(bookRequestdto.getTitle());
-            if(bookService.existsByTitle(bookRequestdto.getTitle()) &&
+            if(bookService.existsByTitle(bookRequestdto.getTitle())){
+                BookResponse bookResponseFind = bookService.findByTitleResponse(bookRequestdto.getTitle());
+                if(bookService.existsByTitle(bookRequestdto.getTitle()) &&
                 bookResponseFind.getAuthor().equals(bookRequestdto.getAuthor()) &&
                 bookResponseFind.getPublisher().equals(bookRequestdto.getPublisher()) &&
                 bookResponseFind.getYearPublication().equals(bookRequestdto.getYearPublication())){
-                bookRequestdto.setQuantity(bookRequestdto.getQuantity()+bookRequestdto.getQuantity());
+                bookRequestdto.setQuantity(bookResponseFind.getQuantity()+bookRequestdto.getQuantity());
                 BookResponse bookResponse = bookService.updateBook(bookResponseFind.getId(), bookRequestdto);
                 responseData.setStatus(false);
                 responseData.setPayload(bookResponse);
                 responseData.getMessages().add("Book with title" + bookRequestdto.getTitle() + 
                                                 ", author" + bookRequestdto.getAuthor() + 
                                                 ", publisher " + bookRequestdto.getPublisher() + 
-                                                ", and year publication" + bookRequestdto.getYearPublication() + 
+                                                ", and year publication " + bookRequestdto.getYearPublication() + 
                                                 " already exist. Quantity updated");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseData);
+                }
             }
             BookResponse bookResponse = bookService.createBook(bookRequestdto);
-            responseData.setStatus(true);
-            responseData.setPayload(bookResponse);
-            responseData.getMessages().add("Book added");
-            return ResponseEntity.ok(responseData);
+                responseData.setStatus(true);
+                responseData.setPayload(bookResponse);
+                responseData.getMessages().add("Book added");
+                return ResponseEntity.ok(responseData);
+            
         }catch(Exception ex){
             responseData.setStatus(false);
             responseData.setPayload(null);

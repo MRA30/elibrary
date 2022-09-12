@@ -11,6 +11,8 @@ public interface BookRepo extends JpaRepository<Book, Long>, JpaSpecificationExe
 
     boolean existsByTitle(String title);
 
+    boolean existsById(long id);
+
     Book findByTitle(String title);
     
     Page<Book> findAll(Pageable pageable);

@@ -1,5 +1,6 @@
 package com.elibrary.services;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -50,16 +51,16 @@ public class BookService {
     }
     
     public BookResponse convertBookToBookResponse(Book book) {
-        BookResponse bookResponse = new BookResponse();
-        bookResponse.setId(book.getId());
-        bookResponse.setTitle(book.getTitle());
-        bookResponse.setAuthor(book.getAuthor());
-        bookResponse.setPublisher(book.getPublisher());
-        bookResponse.setYearPublication(book.getYearPublication());
-        bookResponse.setQuantity(book.getQuantity());
-        bookResponse.setCategory(book.getCategory());
-        bookResponse.setImage(book.getImage());
-        return bookResponse;
+        return new BookResponse(
+            book.getId(),
+            book.getTitle(),
+            book.getAuthor(),
+            book.getPublisher(),
+            book.getYearPublication(),
+            book.getQuantity(),
+            book.getCategory(),
+            book.getImage()
+        );
     }
 
     public BookRequestdto convertBookResponseToBookRequest(BookResponse bookResponse){
@@ -122,6 +123,15 @@ public class BookService {
         int totalElements = (int) listBook.getTotalElements();
         return new PageImpl<>(listBook.stream().map(this::convertBookToBookResponse)
                                         .collect(Collectors.toList()), pageable, totalElements);
+    }
+
+    public void save(Book book) {
+        bookRepo.save(book);
+    }
+
+    public List<BookResponse> findAll() {
+        List<Book> book = bookRepo.findAll();
+        return book.stream().map(this::convertBookToBookResponse).collect(Collectors.toList());
     }
 
 }

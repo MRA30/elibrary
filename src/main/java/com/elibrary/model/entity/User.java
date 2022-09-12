@@ -65,11 +65,11 @@ public class User implements UserDetails {
     private String image;
 
     @OneToMany(targetEntity = Borrow.class, cascade = CascadeType.ALL)
-    @JoinColumn(name = "borrow_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     private List<Borrow> borrows;
 
     @OneToMany(targetEntity = BookRequest.class, cascade = CascadeType.ALL)
-    @JoinColumn(name = "bookRequest_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     private List<BookRequest> bookRequests;
 
     @Override

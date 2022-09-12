@@ -20,4 +20,6 @@ public interface UserRepo extends JpaRepository<User, Long> {
 
     boolean existsBynoHp(String noHp);
 
+    boolean existsById(long id);
+
 }

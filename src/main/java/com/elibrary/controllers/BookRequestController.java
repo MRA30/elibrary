@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.elibrary.dto.request.BookRequestRequest;
-import com.elibrary.dto.response.BookRequestReponse;
+import com.elibrary.dto.response.BookRequestResponse;
 import com.elibrary.dto.response.ResponseData;
 import com.elibrary.services.BookRequestService;
 import com.elibrary.services.UserService;
@@ -35,8 +35,8 @@ public class BookRequestController {
     private UserService userService;
     
     @PostMapping("/add")
-    public ResponseEntity<ResponseData<BookRequestReponse>> createBookRequest(@Valid @RequestBody BookRequestRequest request, Errors errors){
-        ResponseData<BookRequestReponse> responseData = new ResponseData<>();
+    public ResponseEntity<ResponseData<BookRequestResponse>> createBookRequest(@Valid @RequestBody BookRequestRequest request, Errors errors){
+        ResponseData<BookRequestResponse> responseData = new ResponseData<>();
         try{
             if(errors.hasErrors()){
                 for (ObjectError error : errors.getAllErrors()) {
@@ -47,7 +47,7 @@ public class BookRequestController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             }
             long userId = userService.getUser().getId();
-            BookRequestReponse bookRequestReponse = bookRequestService.createBookRequest(userId, request);
+            BookRequestResponse bookRequestReponse = bookRequestService.createBookRequest(userId, request);
             responseData.setStatus(true);
             responseData.setPayload(bookRequestReponse);
             responseData.getMessages().add("Book Request Created Successfully");
@@ -61,8 +61,8 @@ public class BookRequestController {
         
     }
     @PutMapping("/employee/update/{id}")
-        public ResponseEntity<ResponseData<BookRequestReponse>> updateBookRequest(@PathVariable("id") long id,@Valid @RequestBody BookRequestRequest request, Errors errors){
-            ResponseData<BookRequestReponse> responseData = new ResponseData<>();
+        public ResponseEntity<ResponseData<BookRequestResponse>> updateBookRequest(@PathVariable("id") long id,@Valid @RequestBody BookRequestRequest request, Errors errors){
+            ResponseData<BookRequestResponse> responseData = new ResponseData<>();
             try{
                 if(errors.hasErrors()){
                     for (ObjectError error : errors.getAllErrors()) {
@@ -72,7 +72,7 @@ public class BookRequestController {
                     responseData.setPayload(null);
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                 }
-                BookRequestReponse bookRequestReponse = bookRequestService.updateBookRequest(id, request);
+                BookRequestResponse bookRequestReponse = bookRequestService.updateBookRequest(id, request);
                 responseData.setStatus(true);
                 responseData.setPayload(bookRequestReponse);
                 responseData.getMessages().add("Book Request Updated Successfully");
@@ -86,13 +86,13 @@ public class BookRequestController {
     }
 
     @GetMapping("/employee/allBookRequests")
-    public ResponseEntity<ResponseData<Page<BookRequestReponse>>> getAllBookRequests(@RequestParam(defaultValue = "") String search,
+    public ResponseEntity<ResponseData<Page<BookRequestResponse>>> getAllBookRequests(@RequestParam(defaultValue = "") String search,
                                                                                         @RequestParam(defaultValue = "0") Integer page, 
                                                                                         @RequestParam(defaultValue = "10") Integer size,
                                                                                         @RequestParam(defaultValue = "id") String sortBy){
-        ResponseData<Page<BookRequestReponse>> responseData = new ResponseData<>();
+        ResponseData<Page<BookRequestResponse>> responseData = new ResponseData<>();
         try{
-            Page<BookRequestReponse> bookRequests = bookRequestService.searchBookRequest(search, page, size, sortBy);
+            Page<BookRequestResponse> bookRequests = bookRequestService.searchBookRequest(search, page, size, sortBy);
             responseData.setStatus(true);
             responseData.setPayload(bookRequests);
             responseData.getMessages().add("Book Requests Retrieved Successfully");
@@ -105,14 +105,14 @@ public class BookRequestController {
         }
     }
     @GetMapping("/member/AllBookRequests")
-    public ResponseEntity<ResponseData<Page<BookRequestReponse>>> getAllBookRequestsByMember(@RequestParam(defaultValue = "") String search,
+    public ResponseEntity<ResponseData<Page<BookRequestResponse>>> getAllBookRequestsByMember(@RequestParam(defaultValue = "") String search,
                                                                                         @RequestParam(defaultValue = "0") Integer page, 
                                                                                         @RequestParam(defaultValue = "10") Integer size,
                                                                                         @RequestParam(defaultValue = "id") String sortBy){
-        ResponseData<Page<BookRequestReponse>> responseData = new ResponseData<>();
+        ResponseData<Page<BookRequestResponse>> responseData = new ResponseData<>();
         try{
             long userId = userService.getUser().getId();
-            Page<BookRequestReponse> bookRequests = bookRequestService.filterById(search,userId, page, size, sortBy);
+            Page<BookRequestResponse> bookRequests = bookRequestService.filterById(search, userId, page, size, sortBy);
             responseData.setStatus(true);
             responseData.setPayload(bookRequests);
             responseData.getMessages().add("Book Requests Retrieved Successfully");
@@ -124,6 +124,24 @@ public class BookRequestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseData);
         }
     }
+
+    @GetMapping("/employee/{id}")
+    public ResponseEntity<ResponseData<BookRequestResponse>> findById(@PathVariable("id")long id){
+        ResponseData<BookRequestResponse> responseData = new ResponseData<>();
+        try{
+            BookRequestResponse bookRequestResponse = bookRequestService.filterById(id);
+            responseData.setStatus(true);
+            responseData.setPayload(bookRequestResponse);
+            responseData.getMessages().add("book request retrieved successfully");
+            return ResponseEntity.ok(responseData);
+        }catch(Exception e){
+            responseData.setStatus(false);
+            responseData.setPayload(null);
+            responseData.getMessages().add(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseData);
+        }
+    }
+
     @DeleteMapping("/employee/{id}")
     public ResponseEntity<ResponseData<String>> deleteBookRequest(@PathVariable("id") long id){
         ResponseData<String> responseData = new ResponseData<>();

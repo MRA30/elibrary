@@ -37,7 +37,7 @@ public class Borrow {
     private Date returnDate;
 
     @Column(name = "isReturned", nullable = false, columnDefinition = "boolean default false")
-    private Boolean isReturned;
+    private boolean isReturned;
 
     @Column(name = "penalty")
     private double penalty;
