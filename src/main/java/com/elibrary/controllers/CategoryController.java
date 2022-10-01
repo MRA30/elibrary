@@ -1,24 +1,20 @@
 package com.elibrary.controllers;
 
-import javax.validation.Valid;
-
+import com.elibrary.dto.request.CategoryRequest;
+import com.elibrary.dto.response.CategoryResponse;
+import com.elibrary.dto.response.ResponseData;
+import com.elibrary.services.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.elibrary.dto.request.CategoryRequest;
-import com.elibrary.dto.response.CategoryResponse;
-import com.elibrary.dto.response.ResponseData;
-import com.elibrary.services.CategoryService;
+import javax.annotation.security.RolesAllowed;
+import javax.validation.Valid;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/categories")
@@ -27,71 +23,59 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
-    @PostMapping("/add")
+    @PostMapping("/employee/add")
+    @RolesAllowed("employee")
     public ResponseEntity<ResponseData<CategoryResponse>> addCategory(@Valid @RequestBody CategoryRequest request, Errors errors){
-        ResponseData<CategoryResponse> response = new ResponseData<>();
+        List<String> messagesList = new ArrayList<>();
         if(errors.hasErrors()){
             for (ObjectError error : errors.getAllErrors()) {
-                response.getMessages().add(error.getDefaultMessage());
+                messagesList.add(error.getDefaultMessage());
             }
-            response.setStatus(false);
-            response.setPayload(null);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false,messagesList, null));
         }
-        try{
-            CategoryResponse categoryResponse = categoryService.addCategory(request);
-            response.setStatus(true);
-            response.setPayload(categoryResponse);
-            response.getMessages().add("Category added successfully");
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        }catch(Exception e){
-            response.setStatus(false);
-            response.setPayload(null);
-            response.getMessages().add(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+        CategoryResponse categoryResponse = categoryService.addCategory(request);
+        messagesList.add("Category added successfully");
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseData<>(true,messagesList, categoryResponse));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/employee/update/{id}")
+    @RolesAllowed("employee")
     public ResponseEntity<ResponseData<CategoryResponse>> updateCategory(@Valid @PathVariable("id") Long id, @Valid @RequestBody CategoryRequest request, Errors errors){
-        ResponseData<CategoryResponse> response = new ResponseData<>();
+        List<String> messagesList = new ArrayList<>();
+        if(!categoryService.existsById(id)){
+            messagesList.add("Category not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseData<>(false,messagesList, null));
+        }
         if(errors.hasErrors()){
             for (ObjectError error : errors.getAllErrors()) {
-                response.getMessages().add(error.getDefaultMessage());
+                messagesList.add(error.getDefaultMessage());
             }
-            response.setStatus(false);
-            response.setPayload(null);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false,messagesList, null));
         }
-        try{
-            CategoryResponse categoryResponse = categoryService.updateCategory(id,request);
-            response.setStatus(true);
-            response.setPayload(categoryResponse);
-            response.getMessages().add("Category updated successfully");
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        }catch(Exception e){
-            response.setStatus(false);
-            response.setPayload(null);
-            response.getMessages().add(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+        CategoryResponse categoryResponse = categoryService.updateCategory(id,request);
+        messagesList.add("Category updated successfully");
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseData<>(true,messagesList, categoryResponse));
     }
 
-    @DeleteMapping("/{id}")
+    @GetMapping("/employee/allcategories")
+    @RolesAllowed("employee")
+    public ResponseEntity<ResponseData<List<CategoryResponse>>> getAllCategories(@RequestParam(defaultValue = "") String search){
+        List<String> messagesList = new ArrayList<>();
+        messagesList.add("Categories fetched successfully");
+        return ResponseEntity.ok(new ResponseData<>(true,messagesList, categoryService.findAll(search.toLowerCase())));
+    }
+
+    @DeleteMapping("employee/{id}")
+    @RolesAllowed("employee")
     public ResponseEntity<ResponseData<CategoryResponse>> deleteCategory(@PathVariable("id") long id){
-        ResponseData<CategoryResponse> response = new ResponseData<>();
-        try{
-            categoryService.delete(id);
-            response.setStatus(true);
-            response.setPayload(null);
-            response.getMessages().add("Category deleted successfully");
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        }catch(Exception e){
-            response.setStatus(false);
-            response.setPayload(null);
-            response.getMessages().add(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        List<String> messagesList = new ArrayList<>();
+        if(!categoryService.existsById(id)){
+            messagesList.add("Category not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseData<>(false,messagesList, null));
         }
+        categoryService.delete(id);
+        messagesList.add("Category deleted successfully");
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseData<>(true,messagesList, null));
     }
     
 }

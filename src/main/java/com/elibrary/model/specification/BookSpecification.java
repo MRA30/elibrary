@@ -1,10 +1,9 @@
 package com.elibrary.model.specification;
 
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Component;
-
 import com.elibrary.model.entity.Book;
 import com.elibrary.model.entity.Book_;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Component;
 
 @Component
 public class BookSpecification {
@@ -25,7 +24,7 @@ public class BookSpecification {
         }); 
     }
 
-    public Specification<Book> searchBook(String search){
+    public Specification<Book> searchBook(String search) {
         return (Specification.where(filterByTitle(search))
                             .or(filterByAuthor(search))
                             .or(filterByPublisher(search)));

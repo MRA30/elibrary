@@ -1,18 +1,23 @@
 package com.elibrary.dto.request;
 
-import javax.validation.constraints.NotEmpty;
-
 import com.elibrary.validators.GenderValidation;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
+import javax.validation.constraints.NotEmpty;
 
 @Data
 @AllArgsConstructor
 public class UpdateProfileRequest {
 
-    @NotEmpty(message = "name is required")
-    private String name;
+    @NotEmpty(message = "username cannot be empty")
+    private String username;
+
+    @NotEmpty(message = "first name cannot be empty")
+    private String firstName;
+
+    @NotEmpty(message = "last name cannot be empty")
+    private String lastName;
 
     @GenderValidation
     @NotEmpty(message = "gender is required")

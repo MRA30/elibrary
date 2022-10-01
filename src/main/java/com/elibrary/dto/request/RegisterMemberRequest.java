@@ -6,14 +6,22 @@ import javax.validation.constraints.NotEmpty;
 import com.elibrary.validators.EmailValidation;
 import com.elibrary.validators.GenderValidation;
 import com.elibrary.validators.NoHpValidation;
+import com.elibrary.validators.UsernameValidation;
 
 import lombok.Data;
 
 @Data
 public class RegisterMemberRequest {
 
-    @NotEmpty(message = "name cannot be empty")
-    private String name;
+    @NotEmpty(message = "username cannot be empty")
+    @UsernameValidation(message = "username already exist")
+    private String username;
+
+    @NotEmpty(message = "first name cannot be empty")
+    private String firstName;
+
+    @NotEmpty(message = "last name cannot be empty")
+    private String lastName;
 
     @GenderValidation
     @NotEmpty(message = "gender cannot be empty")
@@ -33,6 +41,4 @@ public class RegisterMemberRequest {
 
     @NotEmpty(message = "password cannot be empty")
     private String password;
-
-    private String image;
 }

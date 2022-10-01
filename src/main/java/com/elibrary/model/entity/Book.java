@@ -1,6 +1,5 @@
 package com.elibrary.model.entity;
 
-import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -17,32 +16,38 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "tbl_books")
+@Table(name = "books")
 public class Book {
  
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "title", nullable = false, length = 255)
     private String title;
 
-    @Column(name = "author", nullable = false, length = 100)
     private String author;
 
-    @Column(name = "publisher", nullable = false, length = 100)
     private String publisher;
 
-    @Column(name = "year_publication", nullable = false, length = 4)
     private String yearPublication;
 
-    @Column(name = "quantity", nullable = false)
     private Integer quantity;
     
     @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false, referencedColumnName = "id")
+    @JoinColumn(name = "category_id", referencedColumnName = "id")
     private Category category;
 
-    @Column(name = "image", length = 255)
-    private String image;
+    private String synopsis;
+
+//    constuctor without id
+    public Book(String title, String author, String publisher, String yearPublication, Integer quantity, Category category, String synopsis) {
+        this.title = title;
+        this.author = author;
+        this.publisher = publisher;
+        this.yearPublication = yearPublication;
+        this.quantity = quantity;
+        this.category = category;
+        this.synopsis = synopsis;
+    }
+
 }

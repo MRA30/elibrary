@@ -1,25 +1,19 @@
 package com.elibrary.services;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import javax.transaction.Transactional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-
 import com.elibrary.dto.request.BookRequestdto;
 import com.elibrary.dto.response.BookResponse;
 import com.elibrary.dto.response.CategoryResponse;
 import com.elibrary.model.entity.Book;
 import com.elibrary.model.repos.BookRepo;
+import com.elibrary.model.repos.BorrowRepo;
 import com.elibrary.model.specification.BookSpecification;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.*;
+import org.springframework.stereotype.Service;
+
+import javax.transaction.Transactional;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -29,28 +23,21 @@ public class BookService {
     private BookRepo bookRepo;
 
     @Autowired
+    private BorrowRepo borrowRepo;
+
+    @Autowired
     private CategoryService categoryService;
 
     @Autowired
     private BookSpecification bookSpecification;
-    
-    public BookResponse findByIdBookResponse(long id){
-        Optional<Book> book = bookRepo.findById(id);
-        if(book.isPresent()){
-            return convertBookToBookResponse(book.get());
-        }   
-        return null;
-    }
 
     public Book findById(long id){
         Optional<Book> book = bookRepo.findById(id);
-        if(book.isPresent()){
-            return book.get();
-        }   
-        return null;
+        return book.orElse(null);
     }
     
-    public BookResponse convertBookToBookResponse(Book book) {
+    public BookResponse
+    convertBookToBookResponse(Book book) {
         return new BookResponse(
             book.getId(),
             book.getTitle(),
@@ -59,30 +46,28 @@ public class BookService {
             book.getYearPublication(),
             book.getQuantity(),
             book.getCategory(),
-            book.getImage()
+            book.getSynopsis()
         );
     }
 
-    public BookRequestdto convertBookResponseToBookRequest(BookResponse bookResponse){
-        BookRequestdto bookRequest = new BookRequestdto();
-        bookRequest.setTitle(bookResponse.getTitle());
-        bookRequest.setAuthor(bookResponse.getAuthor());
-        bookRequest.setPublisher(bookResponse.getPublisher());
-        bookRequest.setYearPublication(bookResponse.getYearPublication());
-        bookRequest.setQuantity(bookResponse.getQuantity());
-        bookRequest.setCategory(bookResponse.getCategory().getId());
-        return bookRequest;
+    public Book convertBookRequestdtoToBook(BookRequestdto bookRequestdto) {
+        return new Book(
+            bookRequestdto.getTitle(),
+            bookRequestdto.getAuthor(),
+            bookRequestdto.getPublisher(),
+            bookRequestdto.getYearPublication(),
+            bookRequestdto.getQuantity(),
+            categoryService.convertCategoryResponseToCategory(categoryService.findById(bookRequestdto.getCategory())),
+            bookRequestdto.getSynopsis()
+        );
+    }
+
+    public boolean existsById(long id){
+        return bookRepo.existsById(id);
     }
 
     public BookResponse createBook(BookRequestdto request){
-        Book book = new Book();
-        book.setTitle(request.getTitle());
-        book.setAuthor(request.getAuthor());
-        book.setPublisher(request.getPublisher());
-        book.setYearPublication(request.getYearPublication());
-        book.setQuantity(request.getQuantity());
-        CategoryResponse categoryResponse = categoryService.findById(request.getCategory());
-        book.setCategory(categoryService.convertCategoryResponseToCategory(categoryResponse));
+        Book book = convertBookRequestdtoToBook(request);
         bookRepo.save(book);
         return convertBookToBookResponse(book);
     }
@@ -96,12 +81,15 @@ public class BookService {
         book.setQuantity(request.getQuantity());
         CategoryResponse categoryResponse = categoryService.findById(request.getCategory());
         book.setCategory(categoryService.convertCategoryResponseToCategory(categoryResponse));
+        book.setSynopsis(request.getSynopsis());
         bookRepo.save(book);
         return convertBookToBookResponse(book);
     }
 
     public void deleteBook(long id){
-        bookRepo.deleteById(id);
+        Book book = findById(id);
+        book.setQuantity(0);
+        bookRepo.save(book);
     }
 
     public boolean existsByTitle(String title){
@@ -117,21 +105,72 @@ public class BookService {
         return convertBookToBookResponse(book);
     }
 
-    public Page<BookResponse> searchBook(String search, Integer page, Integer size, String sortBy){
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+    public Page<BookResponse> searchBook(String search, Integer page, Integer size, String sortBy, String direction){
+        Pageable pageable;
+        if(direction.equals("desc")){
+            pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
+        } else{
+            pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        }
         Page<Book> listBook = bookRepo.findAll(bookSpecification.searchBook(search), pageable);
         int totalElements = (int) listBook.getTotalElements();
-        return new PageImpl<>(listBook.stream().map(this::convertBookToBookResponse)
+        return new PageImpl<>(listBook.stream().map(book ->
+                        new BookResponse( book.getId(),
+                                book.getTitle(),
+                                book.getAuthor(),
+                                book.getPublisher(),
+                                book.getYearPublication(),
+                                book.getQuantity() - borrowRepo.countBookBorrow(book.getId()),
+                                book.getCategory(),
+                                book.getSynopsis()))
                                         .collect(Collectors.toList()), pageable, totalElements);
     }
 
-    public void save(Book book) {
+    public Page<BookResponse> getBooksByCategory(Long id, String search, Integer page, Integer size, String sortBy, String direction){
+        Pageable pageable;
+        if(direction.equals("desc")){
+            pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
+        } else{
+            pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        }
+        Page<Book> listBook = bookRepo.findBooksByCategory(id, search.toLowerCase(), pageable);
+        int totalElements = (int) listBook.getTotalElements();
+        return new PageImpl<>(listBook.stream().map(book ->
+                        new BookResponse( book.getId(),
+                                book.getTitle(),
+                                book.getAuthor(),
+                                book.getPublisher(),
+                                book.getYearPublication(),
+                                book.getQuantity() - borrowRepo.countBookBorrow(book.getId()),
+                                book.getCategory(),
+                                book.getSynopsis()))
+                                        .collect(Collectors.toList()), pageable, totalElements);
+    }
+
+    public BookResponse findByIdBook(long id){
+        Optional<Book> book = bookRepo.findById(id);
+        if (book.isPresent()){
+            return new BookResponse(
+                    book.get().getId(),
+                    book.get().getTitle(),
+                    book.get().getAuthor(),
+                    book.get().getPublisher(),
+                    book.get().getYearPublication(),
+                    book.get().getQuantity() - borrowRepo.countBookBorrow(book.get().getId()),
+                    book.get().getCategory(),
+                    book.get().getSynopsis()
+            );
+        }
+        return null;
+    }
+
+
+    public void save(Book book){
         bookRepo.save(book);
     }
 
-    public List<BookResponse> findAll() {
-        List<Book> book = bookRepo.findAll();
-        return book.stream().map(this::convertBookToBookResponse).collect(Collectors.toList());
+    public void delete(long id){
+        bookRepo.deleteById(id);
     }
 
 }

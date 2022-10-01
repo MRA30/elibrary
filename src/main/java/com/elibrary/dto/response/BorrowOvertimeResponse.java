@@ -9,16 +9,14 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BorrowResponse {
-    
-    private Long id;
-    private Long bookId;
+public class BorrowOvertimeResponse {
+
+    private long id;
+    private long bookId;
     private String bookTitle;
-    private Long userId;
+    private long userId;
     private String fullName;
     private Date borrowDate;
-    private Date returnDate;
-    private boolean isReturned;
-    private double penalty;
+    private int daysOvertime;
     private String description;
 }

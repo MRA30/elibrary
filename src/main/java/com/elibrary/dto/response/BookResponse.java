@@ -1,7 +1,6 @@
 package com.elibrary.dto.response;
 
 import com.elibrary.model.entity.Category;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +17,5 @@ public class BookResponse {
     private String yearPublication;
     private Integer quantity;
     private Category category;
-    private String image;
-
+    private String synopsis;
 }

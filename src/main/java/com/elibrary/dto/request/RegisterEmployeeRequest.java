@@ -1,15 +1,11 @@
 package com.elibrary.dto.request;
 
+import com.elibrary.validators.*;
+import lombok.Data;
+
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
-
-import com.elibrary.validators.EmailValidation;
-import com.elibrary.validators.GenderValidation;
-import com.elibrary.validators.NoHpValidation;
-import com.elibrary.validators.NumberIdentityValidation;
-
-import lombok.Data;
 
 @Data
 public class RegisterEmployeeRequest {
@@ -19,8 +15,15 @@ public class RegisterEmployeeRequest {
     @NumberIdentityValidation(message = "number identity already exist")
     private String numberIdentity;
 
-    @NotEmpty(message = "name cannot be empty")
-    private String name;
+    @NotEmpty(message = "username cannot be empty")
+    @UsernameValidation(message = "username already exist")
+    private String username;
+
+    @NotEmpty(message = "first name cannot be empty")
+    private String firstName;
+
+    @NotEmpty(message = "last name cannot be empty")
+    private String lastName;
 
     @GenderValidation
     @NotEmpty(message = "gender cannot be empty")
@@ -41,7 +44,5 @@ public class RegisterEmployeeRequest {
     @NotEmpty(message = "password cannot be empty")
     @Size(min = 8,  max = 20, message = "password lenght must be in 8 to 20 character")
     private String password;
-
-    private String image;
 
 }
