@@ -54,13 +54,13 @@ public class BorrowController {
         }
         BorrowResponse borrowResponse = borrowService.addBorrow(request);
         messagesList.add("Borrow added successfully and due date is " + borrowResponse.getReturnDate());
-        oneSignalConfig.pushNotifBorrow(userService.findById(borrowResponse.getUserId()).getEmail(),borrowResponse.getFullName() + ", you have borrowed a book with title " + borrowResponse.getBookTitle() + " and due date is " + borrowResponse.getReturnDate());
+        oneSignalConfig.pushNotifBorrow(userService.findById(borrowResponse.getUserId()).getEmail(), borrowResponse.getFullName(),"You have borrowed a book " + borrowResponse.getBookTitle() + " and due date is " + borrowResponse.getReturnDate());
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, borrowResponse));
     }
 
     @PutMapping("/employee/update/{id}")
     @RolesAllowed("employee")
-    public ResponseEntity<ResponseData<BorrowResponse>> updateBorrow(@PathVariable("id") long id, @Valid @RequestBody BorrowRequestUpdate request, Errors errors){
+    public ResponseEntity<ResponseData<BorrowResponse>> updateBorrow(@PathVariable("id") long id, @Valid @RequestBody BorrowRequestUpdate request, Errors errors) throws UnirestException {
         List<String> messagesList = new ArrayList<>();
         if(!borrowService.existsById(id)){
             messagesList.add("Borrow not found");
@@ -79,6 +79,9 @@ public class BorrowController {
         }else{
             messagesList.add("Borrow updated successfully");
         }
+        if(request.isReturned()){
+            oneSignalConfig.pushNotifBorrow(userService.findById(borrowResponse.getUserId()).getEmail(), borrowResponse.getFullName(), "You have returned a book " + borrowResponse.getBookTitle() +", and " + messagesList.get(0));        }
+
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, borrowResponse));
     }
 
@@ -121,7 +124,7 @@ public class BorrowController {
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, borrowResponses));
     }
 
-    @GetMapping("/member/allborrows")
+    @GetMapping("/member")
     @RolesAllowed("member")
     public ResponseEntity<ResponseData<Page<BorrowResponse>>> borrowsByMember(Principal principal,
                                                                                  @RequestParam(defaultValue = "false") boolean returnStatus,
@@ -152,5 +155,4 @@ public class BorrowController {
         messagesList.add("borrow retrieved successfully");
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, borrowResponse));
     }
-
 }

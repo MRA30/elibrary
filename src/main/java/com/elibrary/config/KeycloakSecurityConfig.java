@@ -55,7 +55,7 @@ public class KeycloakSecurityConfig extends KeycloakWebSecurityConfigurerAdapter
                 .permitAll()
                 .anyRequest().authenticated()
                 .and().exceptionHandling().authenticationEntryPoint((Request, Response, AuthException)->
-            Response.sendError(HttpServletResponse.SC_UNAUTHORIZED,"Access Denied"))
+            Response.sendError(HttpServletResponse.SC_FORBIDDEN,"Access Denied"))
             .and().sessionManagement()
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }

@@ -57,7 +57,7 @@ public class CategoryController {
         return ResponseEntity.status(HttpStatus.OK).body(new ResponseData<>(true,messagesList, categoryResponse));
     }
 
-    @GetMapping("/employee/allcategories")
+    @GetMapping("/employee")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<List<CategoryResponse>>> getAllCategories(@RequestParam(defaultValue = "") String search){
         List<String> messagesList = new ArrayList<>();

@@ -44,18 +44,18 @@ public class UserController {
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<UserResponse>> registerEmployee(@Valid @RequestBody RegisterEmployeeRequest registerRequest, Errors errors){
         List<String> messagesList = new ArrayList<>();
-        if(errors.hasErrors()){
-            for (ObjectError error : errors.getAllErrors()) {
-                messagesList.add(error.getDefaultMessage());
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false,messagesList, null));
-        }
+//        if(errors.hasErrors()){
+//            for (ObjectError error : errors.getAllErrors()) {
+//                messagesList.add(error.getDefaultMessage());
+//            }
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false,messagesList, null));
+//        }
         UserResponse userResponse = userService.registerEmployee(registerRequest);
         messagesList.add("Register Success");
         return ResponseEntity.ok(new ResponseData<>(true,messagesList, userResponse));
     }
 
-    @GetMapping("/employee/allusers")
+    @GetMapping("/employee")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<Page<UserResponse>>> getAllUsers(@RequestParam(defaultValue = "") String search,
                                                                         @RequestParam(defaultValue = "member") String userRole,
@@ -96,12 +96,12 @@ public class UserController {
     @PostMapping("/public/register")
     public ResponseEntity<ResponseData<UserResponse>> registerMember(@Valid @RequestBody RegisterMemberRequest registerRequest, Errors errors){
         List<String> messagesList = new ArrayList<>();
-        if(errors.hasErrors()){
-            for (ObjectError error : errors.getAllErrors()) {
-                messagesList.add(error.getDefaultMessage());
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false,messagesList, null));
-        }
+//        if(errors.hasErrors()){
+//            for (ObjectError error : errors.getAllErrors()) {
+//                messagesList.add(error.getDefaultMessage());
+//            }
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false,messagesList, null));
+//        }
         UserResponse userResponse = userService.registerMember(registerRequest);
         messagesList.add("Register Success");
         return ResponseEntity.ok(new ResponseData<>(true,messagesList, userResponse));

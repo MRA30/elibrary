@@ -1,5 +1,7 @@
 package com.elibrary.services;
 
+import com.elibrary.Constans;
+import com.elibrary.config.OneSignalConfig;
 import com.elibrary.dto.request.BorrowRequestAdd;
 import com.elibrary.dto.request.BorrowRequestUpdate;
 import com.elibrary.dto.response.BorrowOvertimeResponse;
@@ -20,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +41,9 @@ public class BorrowService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private OneSignalConfig oneSignalConfig;
+
     public int daydiff(Date borrowDate) {
         Date now = new Date();
         int daydiff = Days.daysBetween(
@@ -50,17 +56,28 @@ public class BorrowService {
         return 0;
     }
 
+    public Borrow findById(long id) {
+        Optional<Borrow> borrow = borrowRepo.findById(id);
+        if(borrow.isPresent()){
+            return borrow.get();
+        }
+        return null;
+    }
+
     public BorrowResponse findByIdResponse(long id){
-        Borrow borrow = borrowRepo.findById(id);
-        return convertBorrowToBorrowResponse(borrow);
+       Optional<Borrow> borrow = borrowRepo.findById(id);
+       if(borrow.isPresent()){
+           return convertBorrowToBorrowResponse(borrow.get());
+       }
+       return null;
     }
 
     public String fineOrPenalty(long datediff, double penalty){
         if(datediff > 0 && penalty > 0){
-            return  "Borrow returned successfully and you have to pay Rp. " + (datediff - 7) * 5000 + " for late return" +
+            return  "Borrow returned successfully and you have to pay Rp. " + datediff * Constans.PENALTY + " for late return" +
             " and penalty fee is Rp. " + penalty + " for damaged or lost book";
         }else if(datediff > 0 && penalty == 0) {
-            return "Borrow returned successfully and you have to pay Rp. " + (datediff - 7) * 5000 + " for late return";
+            return "Borrow returned successfully and you have to pay Rp. " + datediff * Constans.PENALTY + " for late return";
         }else if(penalty > 0){
             return "Borrow returned successfully and penalty fee is Rp. " + penalty + " for damaged or lost book";
         }else{
@@ -149,6 +166,7 @@ public class BorrowService {
             borrow.getUser().getId(),
             borrow.getUser().getFirstName() + " " + borrow.getUser().getLastName(),
             borrow.getBorrowDate(),
+            borrow.getReturnDate(),
             days_difference,
             borrow.getDescription()
         );
@@ -160,26 +178,32 @@ public class BorrowService {
     }
 
     public BorrowResponse updateBorrow(long id, BorrowRequestUpdate request){
-        System.out.println("id: " + id);
-        Borrow borrow = borrowRepo.findById(id);
-        System.out.println("borrow: " + borrow.toString());
+        System.out.println("id " + id);
+        Borrow borrow = findById(id);
+        System.out.println(borrow);
         double fine = 0;
-        int days_difference = daydiff(borrow.getBorrowDate());
-        System.out.println(days_difference);
+        Date now = new Date();
+        long diff = now.getTime() - borrow.getReturnDate().getTime();
+        long days_difference = (diff / (1000*60*60*24)) % 365;
         if (days_difference > 0) {
-            fine = days_difference * 5000;
+            fine = days_difference * Constans.PENALTY;
         }
         double totalFine = fine + request.getPenalty();
-        borrow.setReturnDate(java.sql.Date.valueOf(format.format(new Date())));
-        borrow.setReturned(request.isReturned());
-        borrow.setPenalty(totalFine);
-        borrow.setDescription(request.getDescription());
-        borrowRepo.save(borrow);
-        if(request.isLostBroken()){
+        System.out.println(days_difference);
+        System.out.println(request.isLostOrDamage());
+        if (request.isLostOrDamage()) {
             Book bookBrokenOrLost = bookService.findById(borrow.getBook().getId());
             bookBrokenOrLost.setQuantity(bookBrokenOrLost.getQuantity() - 1);
             bookService.save(bookBrokenOrLost);
         }
+        borrow.setReturned(request.isReturned());
+        System.out.println(request.isReturned());
+        if(borrow.isReturned()){
+            borrow.setReturnDate(java.sql.Date.valueOf(format.format(new Date())));
+            borrow.setPenalty(totalFine);
+        }
+        borrow.setDescription(request.getDescription());
+        borrowRepo.save(borrow);
         return convertBorrowToBorrowResponse(borrow);
     }
 
@@ -239,4 +263,6 @@ public class BorrowService {
     public boolean existsById(long id){
         return borrowRepo.existsById(id);
     }
+
+
 }

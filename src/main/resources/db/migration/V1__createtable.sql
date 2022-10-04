@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS Borrows(
     borrow_date DATE NOT NULL,
     return_date DATE,
     is_returned BOOLEAN DEFAULT FALSE,
-    penalty NUMERIC(5,2),
+    penalty FLOAT DEFAULT 0,
     description TEXT,
     FOREIGN KEY(book_id) REFERENCES Books(id),
     FOREIGN KEY(user_id) REFERENCES Users(id)

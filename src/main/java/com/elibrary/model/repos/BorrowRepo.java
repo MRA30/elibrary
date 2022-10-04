@@ -7,10 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface BorrowRepo extends JpaRepository<Borrow, Long> {
 
-    Borrow findById(long id);
+    Optional<Borrow> findById(Long id);
 
     boolean existsById(long id);
 
@@ -32,4 +33,6 @@ public interface BorrowRepo extends JpaRepository<Borrow, Long> {
     @Query(nativeQuery = true, value = "SELECT * FROM borrows WHERE user_id = ?1 AND is_returned = false")
     List<Borrow> findBorrowsByUserId(long id);
 
+    @Query(nativeQuery = true, value = "SELECT * FROM borrows WHERE is_returned = false AND DATE_PART('day', now() - borrow_date) > 6")
+    List<Borrow> findBorrowsOvertime();
 }

@@ -8,5 +8,7 @@ public class Constans {
     public final static long TIME = System.currentTimeMillis();
     public final static String ACCESS_TOKEN = "access_token";
     public final static String REFRESH_TOKEN = "refresh_token";
+
+    public final static double PENALTY = 5000;
     
 }

@@ -17,6 +17,7 @@ public class BorrowOvertimeResponse {
     private long userId;
     private String fullName;
     private Date borrowDate;
+    private Date returnDate;
     private int daysOvertime;
     private String description;
 }

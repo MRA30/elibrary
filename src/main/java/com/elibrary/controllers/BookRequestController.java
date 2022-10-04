@@ -30,16 +30,16 @@ public class BookRequestController {
     @Autowired
     private UserService userService;
     
-    @PostMapping("/add")
+    @PostMapping("/employee/add")
     @RolesAllowed("member")
     public ResponseEntity<ResponseData<BookRequestResponse>> createBookRequest(@Valid @RequestBody BookRequestRequest request, Principal principal, Errors errors){
         List<String> messagesList = new ArrayList<>();
-        if(errors.hasErrors()){
-            for (ObjectError error : errors.getAllErrors()) {
-                messagesList.add(error.getDefaultMessage());
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
-        }
+//        if(errors.hasErrors()){
+//            for (ObjectError error : errors.getAllErrors()) {
+//                messagesList.add(error.getDefaultMessage());
+//            }
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
+//        }
         long userId = userService.getProfile(principal).getId();
         BookRequestResponse bookRequestResponse = bookRequestService.createBookRequest(userId, request);
         messagesList.add("Book Request Created Successfully");
@@ -64,7 +64,7 @@ public class BookRequestController {
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequestReponse));
     }
 
-     @GetMapping("/employee/allbookrequests")
+     @GetMapping("/employee")
      @RolesAllowed("employee")
      public ResponseEntity<ResponseData<Page<BookRequestResponse>>> getAllBookRequests(@RequestParam(defaultValue = "") String search,
                                                                                        @RequestParam(defaultValue = "false") boolean available,
@@ -105,7 +105,7 @@ public class BookRequestController {
          return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequestResponse));
      }
 
-    @GetMapping("/member/allbookrequests")
+    @GetMapping("/member")
     @RolesAllowed("member")
     public ResponseEntity<ResponseData<Page<BookRequestResponse>>> getAllBookRequestsByMember(Principal principal,
                                                                                               @RequestParam(defaultValue = "") String search,

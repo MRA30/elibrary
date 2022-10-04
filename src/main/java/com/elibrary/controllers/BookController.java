@@ -103,7 +103,7 @@ public class BookController {
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
     }
 
-    @GetMapping("/public/allbooks")
+    @GetMapping("/public")
     public ResponseEntity<ResponseData<Page<BookResponse>>> searchBook(@RequestParam(defaultValue = "") String search,
                                                                        @RequestParam(defaultValue = "0") Long category,
                                                                        @RequestParam(defaultValue = "0") Integer page,

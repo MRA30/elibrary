@@ -180,6 +180,7 @@ public class UserService {
                 request.getEmail(),
                 request.getPassword(),
                 userKeycloak.getClientRoles().values().toString().replace("[", "").replace("]", "")
+
         );
 
         var response = usersResource.create(userKeycloak);

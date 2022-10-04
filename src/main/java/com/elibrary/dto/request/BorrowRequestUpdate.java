@@ -8,8 +8,8 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BorrowRequestUpdate {
-    private boolean isLostBroken;
-    private boolean isReturned;
+    private boolean lostOrDamage;
+    private boolean returned;
     private double penalty;
     private String description;
 }
