@@ -54,7 +54,7 @@ public class BorrowController {
         }
         BorrowResponse borrowResponse = borrowService.addBorrow(request);
         messagesList.add("Borrow added successfully and due date is " + borrowResponse.getReturnDate());
-        oneSignalConfig.pushNotifBorrow(userService.findById(borrowResponse.getUserId()).getEmail(), borrowResponse.getFullName(),"You have borrowed a book " + borrowResponse.getBookTitle() + " and due date is " + borrowResponse.getReturnDate());
+        oneSignalConfig.pushNotifyBorrow(userService.findById(borrowResponse.getUserId()).getEmail(), borrowResponse.getFullName(),"You have borrowed a book " + borrowResponse.getBookTitle() + " and due date is " + borrowResponse.getReturnDate());
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, borrowResponse));
     }
 
@@ -80,7 +80,7 @@ public class BorrowController {
             messagesList.add("Borrow updated successfully");
         }
         if(request.isReturned()){
-            oneSignalConfig.pushNotifBorrow(userService.findById(borrowResponse.getUserId()).getEmail(), borrowResponse.getFullName(), "You have returned a book " + borrowResponse.getBookTitle() +", and " + messagesList.get(0));        }
+            oneSignalConfig.pushNotifyBorrow(userService.findById(borrowResponse.getUserId()).getEmail(), borrowResponse.getFullName(), "You have returned a book " + borrowResponse.getBookTitle() +", and " + messagesList.get(0));        }
 
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, borrowResponse));
     }

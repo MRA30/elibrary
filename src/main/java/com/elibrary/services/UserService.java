@@ -151,6 +151,10 @@ public class UserService {
         return null;
     }
 
+    public List<User> findUserEnabled(){
+        return userRepo.findAllEnabled();
+    }
+
     public UserResponse registerEmployee(RegisterEmployeeRequest request){
         UsersResource usersResource = keycloakConfig.getInstance().realm(realm).users();
         String emailLowerCase = request.getEmail().toLowerCase();

@@ -16,8 +16,6 @@ public interface UserRepo extends JpaRepository<User, Long>, JpaSpecificationExe
     Optional<User> findByUsername(String username);
 
     User findByEmail(String email);
-    User findByNumberIdentity(String numberIdentity);
-
     User findBynoHp(String noHp);
 
     boolean existsByEmail(String email);
@@ -30,8 +28,6 @@ public interface UserRepo extends JpaRepository<User, Long>, JpaSpecificationExe
 
     boolean existsByUsername(String username);
 
-    boolean existsByUsernameAndPassword(String username, String password);
-
     Page<User> findAll(Specification<User> and, Pageable pageable);
 
     @Query("SELECT u FROM User u WHERE u.userRole = ?2 AND (lower(CONCAT(u.firstName,' ',u.lastName )) LIKE %?1% OR lower(u.username) LIKE %?1% OR lower(u.numberIdentity) LIKE %?1%)")
@@ -39,4 +35,7 @@ public interface UserRepo extends JpaRepository<User, Long>, JpaSpecificationExe
 
     @Query("SELECT u FROM User u WHERE lower(CONCAT(u.firstName,' ',u.lastName )) LIKE %?1% OR lower(u.username) LIKE %?1% OR lower(u.numberIdentity) LIKE %?1%")
     List<User> findAllWithoutPaging(String search);
+
+    @Query("SELECT u FROM User u WHERE u.enabled = true")
+    List<User> findAllEnabled();
 }

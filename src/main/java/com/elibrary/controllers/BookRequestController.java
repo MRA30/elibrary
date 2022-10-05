@@ -30,7 +30,7 @@ public class BookRequestController {
     @Autowired
     private UserService userService;
     
-    @PostMapping("/employee/add")
+    @PostMapping("/add")
     @RolesAllowed("member")
     public ResponseEntity<ResponseData<BookRequestResponse>> createBookRequest(@Valid @RequestBody BookRequestRequest request, Principal principal, Errors errors){
         List<String> messagesList = new ArrayList<>();

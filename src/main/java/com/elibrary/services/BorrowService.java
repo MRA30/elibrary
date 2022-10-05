@@ -10,10 +10,12 @@ import com.elibrary.model.entity.Book;
 import com.elibrary.model.entity.Borrow;
 import com.elibrary.model.entity.User;
 import com.elibrary.model.repos.BorrowRepo;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -265,4 +267,31 @@ public class BorrowService {
     }
 
 
+    @Scheduled(cron = "* 0 8 * * *")
+//    @Scheduled(cron = "30 * * * * *")
+    public void borrowOvertimeNotify() {
+        List<Borrow> borrows = borrowRepo.findBorrowsOvertime();
+        List<BorrowOvertimeResponse> borrowOvertimeResponses =  borrows.stream().map(this::convertBorrowToBorrowOvertimeResponse).collect(Collectors.toList());
+        borrowOvertimeResponses.forEach(borrowOvertimeResponse -> {
+            User user = userService.findById(borrowOvertimeResponse.getUserId());
+            String email = user.getEmail();
+            String name = user.getFirstName() + " " + user.getLastName();
+            String message = "";
+            if(borrowOvertimeResponse.getDaysOvertime() > 0){
+                message = "You have borrowed the book " + borrowOvertimeResponse.getBookTitle() + " on " + borrowOvertimeResponse.getBorrowDate() + ".\n" +
+                        "You late to return the book on " + borrowOvertimeResponse.getReturnDate()+ ".\n" +
+                        "You have been fined Rp. " + Constans.PENALTY * borrowOvertimeResponse.getDaysOvertime() + " for " + borrowOvertimeResponse.getDaysOvertime() + " days.\n" +
+                        "Thank you for visiting our library.";
+            }else{
+                message = "You have borrowed the book " + borrowOvertimeResponse.getBookTitle() + " on " + borrowOvertimeResponse.getBorrowDate() + ".\n" +
+                        "You have to return the book today on " + borrowOvertimeResponse.getReturnDate() + " or you will be fined Rp. " + Constans.PENALTY + "/day.\n" +
+                        "Thank you for visiting our library.";
+            }
+            try {
+                oneSignalConfig.pushNotifyBorrow(email, name, message);
+            } catch (UnirestException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 }
