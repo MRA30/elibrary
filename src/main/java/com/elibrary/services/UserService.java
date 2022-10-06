@@ -18,8 +18,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -127,7 +131,8 @@ public class UserService {
             user.getNoHp(),
             user.getAddress(),
             user.getEmail(),
-            user.getUserRole()
+            user.getUserRole(),
+            user.getImage()
 //            user.getBorrows(),
 //            user.getBookRequests()
         );
@@ -282,6 +287,26 @@ public class UserService {
     public List<UserResponse> findAllWithoutPaging(String search){
         List<User> members = userRepo.findAllWithoutPaging(search);
         return members.stream().map(this::convertUserToUserResponse).collect(Collectors.toList());
+    }
+
+    public UserResponse uploadImage(MultipartFile image, Long id) throws IOException {
+        System.out.println(image.getOriginalFilename());
+        String originalNameImage = image.getOriginalFilename();
+        int index = originalNameImage.lastIndexOf(".");
+
+        String formatImage = "";
+        if(index > 0){
+            formatImage = "." + originalNameImage.substring(index + 1);
+        }
+        String imageName = UUID.randomUUID() + formatImage;
+        System.out.println(imageName);
+        String userDirectory = Paths.get("").toAbsolutePath().toString();
+        User user = findById(id);
+
+        image.transferTo(new File(userDirectory + "/src/main/resources/images/" + imageName));
+        user.setImage(imageName);
+
+        return convertUserToUserResponse(userRepo.save(user));
     }
 
     private static CredentialRepresentation createPasswordCredentials(String password) {

@@ -23,8 +23,8 @@ public class SchedulingConfig {
     private UserService userService;
 
 
-//    @Scheduled(cron = "0 0 7 * * *")
-    @Scheduled(cron = "15 * * * * *")
+    @Scheduled(cron = "0 0 7 * * *")
+//    @Scheduled(cron = "15 * * * * *")
     public void pushNotifyMorning() throws UnirestException {
     List<User> users = userService.findUserEnabled();
         for (User user : users) {

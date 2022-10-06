@@ -18,7 +18,5 @@ public class UserResponse {
     private String address;
     private String email;
     private String userRole;
-//    private List<Borrow> borrows;
-//    private List<BookRequest> bookRequests;
-
+    private String image;
 }

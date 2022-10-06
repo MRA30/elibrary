@@ -116,6 +116,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-core</artifactId>
+			<version>${keycloak.version}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.openapitools</groupId>
 			<artifactId>onesignal-java-client</artifactId>
 			<version>1.0.1</version>

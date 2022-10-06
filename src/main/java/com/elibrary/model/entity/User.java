@@ -3,11 +3,8 @@ package com.elibrary.model.entity;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.*;
-import org.hibernate.Hibernate;
 
 import javax.persistence.*;
-import java.util.List;
-import java.util.Objects;
 
 @Entity
 @Getter
@@ -20,7 +17,7 @@ import java.util.Objects;
         generator = ObjectIdGenerators.PropertyGenerator.class,
         property = "id"
 )
-public class User {
+public class User extends Image {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -61,6 +58,23 @@ public class User {
     // contructor without id
     public User(String numberIdentity, String username, String firstName, String lastName, boolean enabled, String gender, String noHp,
                 String address, String email, String password, String userRole) {
+        this.numberIdentity = numberIdentity;
+        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.enabled = enabled;
+        this.gender = gender;
+        this.noHp = noHp;
+        this.address = address;
+        this.email = email;
+        this.password = password;
+        this.userRole = userRole;
+    }
+
+    public User(Long id,String numberIdentity, String username, String firstName, String lastName, boolean enabled, String gender, String noHp,
+                String address, String email, String password, String userRole, String image, User user) {
+        super(image, user);
+        this.id = id;
         this.numberIdentity = numberIdentity;
         this.username = username;
         this.firstName = firstName;

@@ -18,4 +18,5 @@ public class BookResponse {
     private Integer quantity;
     private Category category;
     private String synopsis;
+    private String image;
 }

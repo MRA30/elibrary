@@ -10,9 +10,14 @@ import com.elibrary.model.specification.BookSpecification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,7 +51,8 @@ public class BookService {
             book.getYearPublication(),
             book.getQuantity(),
             book.getCategory(),
-            book.getSynopsis()
+            book.getSynopsis(),
+            book.getImage()
         );
     }
 
@@ -122,7 +128,8 @@ public class BookService {
                                 book.getYearPublication(),
                                 book.getQuantity() - borrowRepo.countBookBorrow(book.getId()),
                                 book.getCategory(),
-                                book.getSynopsis()))
+                                book.getSynopsis(),
+                                book.getImage()))
                                         .collect(Collectors.toList()), pageable, totalElements);
     }
 
@@ -143,7 +150,8 @@ public class BookService {
                                 book.getYearPublication(),
                                 book.getQuantity() - borrowRepo.countBookBorrow(book.getId()),
                                 book.getCategory(),
-                                book.getSynopsis()))
+                                book.getSynopsis(),
+                                book.getImage()))
                                         .collect(Collectors.toList()), pageable, totalElements);
     }
 
@@ -158,12 +166,30 @@ public class BookService {
                     book.get().getYearPublication(),
                     book.get().getQuantity() - borrowRepo.countBookBorrow(book.get().getId()),
                     book.get().getCategory(),
-                    book.get().getSynopsis()
+                    book.get().getSynopsis(),
+                    book.get().getImage()
             );
         }
         return null;
     }
 
+    public BookResponse uploadImage(MultipartFile image, long id) throws IOException {
+        String originalNameImage = image.getOriginalFilename();
+        int index = originalNameImage.lastIndexOf(".");
+
+        String formatImage = "";
+        if(index > 0){
+            formatImage = "." + originalNameImage.substring(index + 1);
+        }
+        String imageName = UUID.randomUUID().toString() + formatImage;
+        String userDirectory = Paths.get("").toAbsolutePath().toString();
+        Book book = findById(id);
+
+        image.transferTo(new File(userDirectory + "/src/main/resources/images/" + imageName));
+        book.setImage(imageName);
+
+        return convertBookToBookResponse(bookRepo.save(book));
+    }
 
     public void save(Book book){
         bookRepo.save(book);

@@ -34,26 +34,32 @@ public class BookRequestController {
     @RolesAllowed("member")
     public ResponseEntity<ResponseData<BookRequestResponse>> createBookRequest(@Valid @RequestBody BookRequestRequest request, Principal principal, Errors errors){
         List<String> messagesList = new ArrayList<>();
-//        if(errors.hasErrors()){
-//            for (ObjectError error : errors.getAllErrors()) {
-//                messagesList.add(error.getDefaultMessage());
-//            }
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
-//        }
-        long userId = userService.getProfile(principal).getId();
-        BookRequestResponse bookRequestResponse = bookRequestService.createBookRequest(userId, request);
-        messagesList.add("Book Request Created Successfully");
-        return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequestResponse));
+        try {
+            if (errors.hasErrors()) {
+                for (ObjectError error : errors.getAllErrors()) {
+                    messagesList.add(error.getDefaultMessage());
+                }
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
+            }
+            long userId = userService.getProfile(principal).getId();
+            BookRequestResponse bookRequestResponse = bookRequestService.createBookRequest(userId, request);
+            messagesList.add("Book Request Created Successfully");
+            return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequestResponse));
+        }catch (Exception e){
+            messagesList.add(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
+        }
     }
     @PutMapping("/employee/update/{id}")
     @RolesAllowed("employee")
-        public ResponseEntity<ResponseData<BookRequestResponse>> updateBookRequest(@PathVariable("id") long id,@Valid @RequestBody BookRequestRequest request, Errors errors){
-            List<String> messagesList = new ArrayList<>();
-            if(!bookRequestService.existsById(id)){
+    public ResponseEntity<ResponseData<BookRequestResponse>> updateBookRequest(@PathVariable("id") long id,@Valid @RequestBody BookRequestRequest request, Errors errors){
+        List<String> messagesList = new ArrayList<>();
+        try {
+            if (!bookRequestService.existsById(id)) {
                 messagesList.add("Book Request does not exist");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseData<>(false, messagesList, null));
             }
-            if(errors.hasErrors()){
+            if (errors.hasErrors()) {
                 for (ObjectError error : errors.getAllErrors()) {
                     messagesList.add(error.getDefaultMessage());
                 }
@@ -62,6 +68,10 @@ public class BookRequestController {
             BookRequestResponse bookRequestReponse = bookRequestService.updateBookRequest(id, request);
             messagesList.add("Book Request Updated Successfully");
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequestReponse));
+        }catch (Exception e){
+            messagesList.add(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
+        }
     }
 
      @GetMapping("/employee")
@@ -73,22 +83,32 @@ public class BookRequestController {
                                                                                        @RequestParam(defaultValue = "id") String sortBy,
                                                                                        @RequestParam(defaultValue = "asc") String direction){
         List<String> messagesList = new ArrayList<>();
-        Page<BookRequestResponse> bookRequests = bookRequestService.searchBookRequest(search, available, page, size, sortBy, direction.toLowerCase());
-         messagesList.add("Book Requests Retrieved Successfully");
-        return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequests));
+        try {
+            Page<BookRequestResponse> bookRequests = bookRequestService.searchBookRequest(search, available, page, size, sortBy, direction.toLowerCase());
+            messagesList.add("Book Requests Retrieved Successfully");
+            return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequests));
+        }catch (Exception e){
+            messagesList.add(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
+        }
      }
 
     @DeleteMapping("/employee/{id}")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<String>> deleteBookRequest(@PathVariable("id") long id){
         List<String> messagesList = new ArrayList<>();
-        if(!bookRequestService.existsById(id)){
-            messagesList.add("Book Request does not exist");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseData<>(false, messagesList, null));
+        try {
+            if (!bookRequestService.existsById(id)) {
+                messagesList.add("Book Request does not exist");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseData<>(false, messagesList, null));
+            }
+            bookRequestService.delete(id);
+            messagesList.add("Book Request Deleted Successfully");
+            return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
+        }catch (Exception e){
+            messagesList.add(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
         }
-        bookRequestService.delete(id);
-        messagesList.add("Book Request Deleted Successfully");
-        return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
     }
 
 
@@ -96,13 +116,18 @@ public class BookRequestController {
      @RolesAllowed("employee")
      public ResponseEntity<ResponseData<BookRequestResponse>> findById(@PathVariable("id")long id){
          List<String> messagesList = new ArrayList<>();
-         if(!bookRequestService.existsById(id)){
-             messagesList.add("Book Request Not Found");
-             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseData<>(false, messagesList, null));
+         try {
+             if (!bookRequestService.existsById(id)) {
+                 messagesList.add("Book Request Not Found");
+                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseData<>(false, messagesList, null));
+             }
+             BookRequestResponse bookRequestResponse = bookRequestService.findByIdResponse(id);
+             messagesList.add("book request retrieved successfully");
+             return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequestResponse));
+         }catch (Exception e){
+             messagesList.add(e.getMessage());
+             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
          }
-         BookRequestResponse bookRequestResponse = bookRequestService.findByIdResponse(id);
-         messagesList.add("book request retrieved successfully");
-         return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequestResponse));
      }
 
     @GetMapping("/member")
@@ -115,26 +140,36 @@ public class BookRequestController {
                                                                                               @RequestParam(defaultValue = "id") String sortBy,
                                                                                               @RequestParam(defaultValue = "asc") String direction){
         List<String> messagesList = new ArrayList<>();
-        long userId = userService.getProfile(principal).getId();
-        Page<BookRequestResponse> bookRequests = bookRequestService.filterByUserId(search, userId, available, page, size, sortBy, direction.toLowerCase());
-        messagesList.add("Book Requests Retrieved Successfully");
-        return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequests));
+        try {
+            long userId = userService.getProfile(principal).getId();
+            Page<BookRequestResponse> bookRequests = bookRequestService.filterByUserId(search, userId, available, page, size, sortBy, direction.toLowerCase());
+            messagesList.add("Book Requests Retrieved Successfully");
+            return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequests));
+        }catch (Exception e){
+            messagesList.add(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
+        }
     }
 
      @GetMapping("/member/{id}")
      @RolesAllowed("member")
-        public ResponseEntity<ResponseData<BookRequestResponse>> findByIdByMember(@PathVariable("id")long id, Principal principal){
-            List<String> messagesList = new ArrayList<>();
+     public ResponseEntity<ResponseData<BookRequestResponse>> findByIdByMember(@PathVariable("id")long id, Principal principal){
+        List<String> messagesList = new ArrayList<>();
+        try {
             if (!bookRequestService.existsById(id)) {
                 messagesList.add("Book Request Not Found");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseData<>(false, messagesList, null));
             }
             BookRequestResponse bookRequestResponse = bookRequestService.findByIdResponse(id);
-            if(!Objects.equals(bookRequestResponse.getUserId(), userService.getProfile(principal).getId())){
+            if (!Objects.equals(bookRequestResponse.getUserId(), userService.getProfile(principal).getId())) {
                 messagesList.add("You are not authorized to view this book request");
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ResponseData<>(false, messagesList, null));
             }
             messagesList.add("book request retrieved successfully");
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequestResponse));
+        }catch (Exception e){
+            messagesList.add(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
         }
+    }
 }

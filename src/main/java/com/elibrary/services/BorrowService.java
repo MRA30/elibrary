@@ -74,6 +74,26 @@ public class BorrowService {
        return null;
     }
 
+    public boolean checkDuplicateValue(List<BorrowRequestAdd> borrowRequestAdd){
+        List<Long> listBookId = new ArrayList<>();
+        for (BorrowRequestAdd requestAdd : borrowRequestAdd) {
+            listBookId.add(requestAdd.getBookId());
+        }
+        int distinct = (int) listBookId.stream().distinct().count();
+        return distinct != listBookId.size();
+    }
+
+    public List<String> checkUserBorrows(List<BorrowRequestAdd> borrowRequestAdds){
+        List<String> messagesList = new ArrayList<>();
+        Long userId = borrowRequestAdds.get(0).getUserId();
+        for (BorrowRequestAdd borrowRequestAdd : borrowRequestAdds) {
+            if(checkBorrow(borrowRequestAdd.getBookId(), userId)){
+                messagesList.add("Book with id " + borrowRequestAdd.getBookId() + " is borrowed by user with id " + userId);
+            }
+        }
+        return messagesList;
+    }
+
     public String fineOrPenalty(long datediff, double penalty){
         if(datediff > 0 && penalty > 0){
             return  "Borrow returned successfully and you have to pay Rp. " + datediff * Constans.PENALTY + " for late return" +
@@ -85,21 +105,6 @@ public class BorrowService {
         }else{
             return "Borrow returned successfully";
         }
-    }
-
-    public List<String> checkBookBorrowsAndQuantity(BorrowRequestAdd request){
-        List<String> messagesList = new ArrayList<>();
-        if(checkBorrow(request.getBookId(), request.getUserId())){
-            messagesList.add("User already borrow this book");
-        }
-        Book book = bookService.findById(request.getBookId());
-        if(book.getQuantity() - countBookBorrow(request.getBookId()) <= 0){
-            messagesList.add("Book " + book.getTitle() + " is not available now");
-        }
-        if(countUserBorrows(request.getUserId()) >= 3){
-            messagesList.add("User can only borrow 3 books");
-        }
-        return messagesList;
     }
 
     public BorrowResponse convertBorrowToBorrowResponse(Borrow borrow){
@@ -174,9 +179,9 @@ public class BorrowService {
         );
     }
 
-    public BorrowResponse addBorrow(BorrowRequestAdd request){
-        Borrow borrow = borrowRepo.save(convertBorrowRequestToBorrowAdd(request));
-        return convertBorrowToBorrowResponse(borrow);
+    public List<BorrowResponse> addBorrows(List<BorrowRequestAdd> request){
+        List<Borrow> borrow = borrowRepo.saveAll(request.stream().map(this::convertBorrowRequestToBorrowAdd).collect(Collectors.toList()));
+        return borrow.stream().map(this::convertBorrowToBorrowResponse).collect(Collectors.toList());
     }
 
     public BorrowResponse updateBorrow(long id, BorrowRequestUpdate request){

@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "books")
-public class Book {
+public class Book extends Image {
  
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,6 +41,19 @@ public class Book {
 
 //    constuctor without id
     public Book(String title, String author, String publisher, String yearPublication, Integer quantity, Category category, String synopsis) {
+        this.title = title;
+        this.author = author;
+        this.publisher = publisher;
+        this.yearPublication = yearPublication;
+        this.quantity = quantity;
+        this.category = category;
+        this.synopsis = synopsis;
+    }
+
+//    constructor
+    public Book(Long id, String title, String author, String publisher, String yearPublication, Integer quantity, Category category, String synopsis, String image, Book book) {
+        super(image, book);
+        this.id = id;
         this.title = title;
         this.author = author;
         this.publisher = publisher;
