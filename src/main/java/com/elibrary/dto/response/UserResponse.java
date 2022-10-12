@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -18,5 +20,4 @@ public class UserResponse {
     private String address;
     private String email;
     private String userRole;
-    private String image;
 }

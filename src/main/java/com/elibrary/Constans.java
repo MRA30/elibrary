@@ -1,5 +1,7 @@
 package com.elibrary;
 
+import java.nio.file.FileSystems;
+
 public class Constans {
 
     public final static String SECRET_KEY = "elibrary";
@@ -10,5 +12,10 @@ public class Constans {
     public final static String REFRESH_TOKEN = "refresh_token";
 
     public final static double PENALTY = 5000;
-    
+
+    public final static String userDirectory = FileSystems.getDefault().getPath("").toAbsolutePath() + "/src/main/resources/images";
+
+    public final static String MESSAGE = "message";
+
+
 }

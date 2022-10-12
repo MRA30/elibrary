@@ -1,9 +1,12 @@
 package com.elibrary.services;
 
+import com.elibrary.Exception.BusinessNotFound;
+import com.elibrary.Exception.CategoryException;
 import com.elibrary.dto.request.BookRequestdto;
 import com.elibrary.dto.response.BookResponse;
 import com.elibrary.dto.response.CategoryResponse;
 import com.elibrary.model.entity.Book;
+import com.elibrary.model.entity.Image;
 import com.elibrary.model.repos.BookRepo;
 import com.elibrary.model.repos.BorrowRepo;
 import com.elibrary.model.specification.BookSpecification;
@@ -16,6 +19,7 @@ import javax.transaction.Transactional;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -36,6 +40,7 @@ public class BookService {
     @Autowired
     private BookSpecification bookSpecification;
 
+
     public Book findById(long id){
         Optional<Book> book = bookRepo.findById(id);
         return book.orElse(null);
@@ -51,8 +56,7 @@ public class BookService {
             book.getYearPublication(),
             book.getQuantity(),
             book.getCategory(),
-            book.getSynopsis(),
-            book.getImage()
+            book.getSynopsis()
         );
     }
 
@@ -72,30 +76,49 @@ public class BookService {
         return bookRepo.existsById(id);
     }
 
-    public BookResponse createBook(BookRequestdto request){
-        Book book = convertBookRequestdtoToBook(request);
-        bookRepo.save(book);
-        return convertBookToBookResponse(book);
+    public BookResponse createBook(BookRequestdto request) throws CategoryException {
+        if(categoryService.existsById(request.getCategory())){
+            Book book = convertBookRequestdtoToBook(request);
+            bookRepo.save(book);
+            return convertBookToBookResponse(book);
+        }else {
+            throw new CategoryException("Category does not exist");
+        }
+
     }
 
-    public BookResponse updateBook(long id, BookRequestdto request){
+    public BookResponse updateBook(long id, BookRequestdto request) throws BusinessNotFound, CategoryException {
         Book book = findById(id);
-        book.setTitle(request.getTitle());
-        book.setAuthor(request.getAuthor());
-        book.setPublisher(request.getPublisher());
-        book.setYearPublication(request.getYearPublication());
-        book.setQuantity(request.getQuantity());
-        CategoryResponse categoryResponse = categoryService.findById(request.getCategory());
-        book.setCategory(categoryService.convertCategoryResponseToCategory(categoryResponse));
-        book.setSynopsis(request.getSynopsis());
-        bookRepo.save(book);
-        return convertBookToBookResponse(book);
+        if(book != null){
+            if(categoryService.existsById(request.getCategory())) {
+
+                book.setTitle(request.getTitle());
+                book.setAuthor(request.getAuthor());
+                book.setPublisher(request.getPublisher());
+                book.setYearPublication(request.getYearPublication());
+                book.setQuantity(request.getQuantity());
+                CategoryResponse categoryResponse = categoryService.findById(request.getCategory());
+                book.setCategory(categoryService.convertCategoryResponseToCategory(categoryResponse));
+                book.setSynopsis(request.getSynopsis());
+                bookRepo.save(book);
+                return convertBookToBookResponse(book);
+            }else {
+                throw new CategoryException("Category does not exist");
+            }
+        }else {
+            throw new BusinessNotFound("Book not found");
+        }
+
     }
 
-    public void deleteBook(long id){
+    public void deleteBook(long id) throws BusinessNotFound {
         Book book = findById(id);
-        book.setQuantity(0);
-        bookRepo.save(book);
+        if(book != null){
+            book.setQuantity(0);
+            bookRepo.save(book);
+        }else {
+            throw new BusinessNotFound("Book not found");
+        }
     }
 
     public boolean existsByTitle(String title){
@@ -128,34 +151,36 @@ public class BookService {
                                 book.getYearPublication(),
                                 book.getQuantity() - borrowRepo.countBookBorrow(book.getId()),
                                 book.getCategory(),
-                                book.getSynopsis(),
-                                book.getImage()))
+                                book.getSynopsis()))
                                         .collect(Collectors.toList()), pageable, totalElements);
     }
 
-    public Page<BookResponse> getBooksByCategory(Long id, String search, Integer page, Integer size, String sortBy, String direction){
-        Pageable pageable;
-        if(direction.equals("desc")){
-            pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
-        } else{
-            pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+    public Page<BookResponse> getBooksByCategory(Long id, String search, Integer page, Integer size, String sortBy, String direction) throws BusinessNotFound {
+        if(categoryService.existsById(id)) {
+            Pageable pageable;
+            if (direction.equals("desc")) {
+                pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
+            } else {
+                pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+            }
+            Page<Book> listBook = bookRepo.findBooksByCategory(id, search.toLowerCase(), pageable);
+            int totalElements = (int) listBook.getTotalElements();
+            return new PageImpl<>(listBook.stream().map(book ->
+                            new BookResponse(book.getId(),
+                                    book.getTitle(),
+                                    book.getAuthor(),
+                                    book.getPublisher(),
+                                    book.getYearPublication(),
+                                    book.getQuantity() - borrowRepo.countBookBorrow(book.getId()),
+                                    book.getCategory(),
+                                    book.getSynopsis()))
+                    .collect(Collectors.toList()), pageable, totalElements);
+        }else {
+            throw new BusinessNotFound("Category does not exist");
         }
-        Page<Book> listBook = bookRepo.findBooksByCategory(id, search.toLowerCase(), pageable);
-        int totalElements = (int) listBook.getTotalElements();
-        return new PageImpl<>(listBook.stream().map(book ->
-                        new BookResponse( book.getId(),
-                                book.getTitle(),
-                                book.getAuthor(),
-                                book.getPublisher(),
-                                book.getYearPublication(),
-                                book.getQuantity() - borrowRepo.countBookBorrow(book.getId()),
-                                book.getCategory(),
-                                book.getSynopsis(),
-                                book.getImage()))
-                                        .collect(Collectors.toList()), pageable, totalElements);
     }
 
-    public BookResponse findByIdBook(long id){
+    public BookResponse findByIdBook(long id) throws BusinessNotFound {
         Optional<Book> book = bookRepo.findById(id);
         if (book.isPresent()){
             return new BookResponse(
@@ -166,37 +191,23 @@ public class BookService {
                     book.get().getYearPublication(),
                     book.get().getQuantity() - borrowRepo.countBookBorrow(book.get().getId()),
                     book.get().getCategory(),
-                    book.get().getSynopsis(),
-                    book.get().getImage()
+                    book.get().getSynopsis()
             );
         }
-        return null;
-    }
-
-    public BookResponse uploadImage(MultipartFile image, long id) throws IOException {
-        String originalNameImage = image.getOriginalFilename();
-        int index = originalNameImage.lastIndexOf(".");
-
-        String formatImage = "";
-        if(index > 0){
-            formatImage = "." + originalNameImage.substring(index + 1);
-        }
-        String imageName = UUID.randomUUID().toString() + formatImage;
-        String userDirectory = Paths.get("").toAbsolutePath().toString();
-        Book book = findById(id);
-
-        image.transferTo(new File(userDirectory + "/src/main/resources/images/" + imageName));
-        book.setImage(imageName);
-
-        return convertBookToBookResponse(bookRepo.save(book));
+        throw new BusinessNotFound("Book not found");
     }
 
     public void save(Book book){
         bookRepo.save(book);
     }
 
-    public void delete(long id){
-        bookRepo.deleteById(id);
+    public void delete(long id) throws BusinessNotFound {
+        Optional<Book> book = bookRepo.findById(id);
+        if(book.isPresent()){
+            bookRepo.deleteById(id);
+        }else{
+            throw new BusinessNotFound("Book not found");
+        }
     }
 
 }

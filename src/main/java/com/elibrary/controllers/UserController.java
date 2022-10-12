@@ -1,6 +1,8 @@
 package com.elibrary.controllers;
 
 import com.elibrary.Constans;
+import com.elibrary.Exception.BusinessNotFound;
+import com.elibrary.Exception.UserException;
 import com.elibrary.config.KeycloakConfig;
 import com.elibrary.dto.request.LoginRequest;
 import com.elibrary.dto.request.RegisterEmployeeRequest;
@@ -16,19 +18,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.io.IOException;
 import java.security.Principal;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
@@ -44,22 +43,11 @@ public class UserController {
 
     @PostMapping("/employee/register")
     @RolesAllowed("employee")
-    public ResponseEntity<ResponseData<UserResponse>> registerEmployee(@Valid @RequestBody RegisterEmployeeRequest registerRequest, Errors errors){
-        List<String> messagesList = new ArrayList<>();
-        try {
-            if (errors.hasErrors()) {
-                for (ObjectError error : errors.getAllErrors()) {
-                    messagesList.add(error.getDefaultMessage());
-                }
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
-            }
+    public ResponseEntity<ResponseData<UserResponse>> registerEmployee(@Valid @RequestBody RegisterEmployeeRequest registerRequest) throws UserException {
+        Map<String, String> messagesList = new HashMap<>();
             UserResponse userResponse = userService.registerEmployee(registerRequest);
-            messagesList.add("Register Success");
+            messagesList.put(Constans.MESSAGE, "Register Success");
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, userResponse));
-        }catch (Exception e){
-            messagesList.add(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
-        }
     }
 
     @GetMapping("/employee")
@@ -70,152 +58,87 @@ public class UserController {
                                                                         @RequestParam(defaultValue = "10") int size,
                                                                         @RequestParam(defaultValue = "id") String sortBy,
                                                                         @RequestParam(defaultValue = "asc") String direction){
-        List<String> messagesList = new ArrayList<>();
+        Map<String, String> messagesList = new HashMap<>();
         try {
             Page<UserResponse> userResponses = userService.findAllUsers(search.toLowerCase(), userRole.toLowerCase(), page, size, sortBy, direction.toLowerCase());
-            messagesList.add("Get All Users Success");
+            messagesList.put(Constans.MESSAGE, "Get All Users Success");
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, userResponses));
         }catch (Exception e){
-            messagesList.add(e.getMessage());
+            messagesList.put(Constans.MESSAGE, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
         }
     }
 
     @GetMapping("/employee/{id}")
     @RolesAllowed("employee")
-    public ResponseEntity<ResponseData<UserResponse>> getDetailsUser(@PathVariable("id") Long id){
-        List<String> messagesList = new ArrayList<>();
-        try {
-            if (!userService.existsById(id)) {
-                messagesList.add("User Not Found");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseData<>(false, messagesList, null));
-            }
+    public ResponseEntity<ResponseData<UserResponse>> getDetailsUser(@PathVariable("id") Long id) throws BusinessNotFound {
+        Map<String, String> messagesList = new HashMap<>();
             UserResponse userResponse = userService.findByIdUserResponse(id);
-            messagesList.add("Get Details Profile Success");
+            messagesList.put(Constans.MESSAGE, "Get Details Profile Success");
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, userResponse));
-        }catch (Exception e){
-            messagesList.add(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
-        }
     }
 
     @GetMapping("/employee/allmemeberwithoutpaging")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<List<UserResponse>>> getAllMemberWithoutPaging(@RequestParam(defaultValue = "") String search){
-        List<String> messagesList = new ArrayList<>();
-        try {
+        Map<String, String> messagesList = new HashMap<>();
             List<UserResponse> userResponses = userService.findAllWithoutPaging(search);
+            messagesList.put(Constans.MESSAGE, "Get All Member Success");
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, userResponses));
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
-        }
     }
 
     @PostMapping("/public/register")
-    public ResponseEntity<ResponseData<UserResponse>> registerMember(@Valid @RequestBody RegisterMemberRequest registerRequest, Errors errors){
-        List<String> messagesList = new ArrayList<>();
-        try {
-            if (errors.hasErrors()) {
-                for (ObjectError error : errors.getAllErrors()) {
-                    messagesList.add(error.getDefaultMessage());
-                }
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
-            }
+    public ResponseEntity<ResponseData<UserResponse>> registerMember(@Valid @RequestBody RegisterMemberRequest registerRequest) throws UserException {
+        Map<String, String> messagesList = new HashMap<>();
             UserResponse userResponse = userService.registerMember(registerRequest);
-            messagesList.add("Register Success");
+            messagesList.put(Constans.MESSAGE, "Register Success");
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, userResponse));
-        }catch (Exception e){
-            messagesList.add(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
-        }
     }
 
     @PostMapping("/public/login")
     public ResponseEntity<ResponseData<UserResponse>> login(@Valid @RequestBody LoginRequest loginRequest,
-                                                             HttpServletResponse response, Errors errors) {
-        List<String> messagesList = new ArrayList<>();
-        try {
-            if (errors.hasErrors()) {
-                for (ObjectError error : errors.getAllErrors()) {
-                    messagesList.add(error.getDefaultMessage());
-                }
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
-            }
-            if (!userService.existsByUsernameAndPassword(loginRequest.getUsername(), loginRequest.getPassword())) {
-                messagesList.add("Username or Password is wrong");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
-            }
-            Keycloak keycloak = keycloakConfig.newKeycloakBuilderWithPasswordCredentials(loginRequest.getUsername(), loginRequest.getPassword()).build();
-            AccessTokenResponse accessTokenResponse = keycloak.tokenManager().getAccessToken();
-            Cookie newCookie = new Cookie(Constans.ACCESS_TOKEN, accessTokenResponse.getToken());
-            newCookie.setHttpOnly(true);
-            newCookie.setPath("/");
-            newCookie.setSecure(true);
-            newCookie.setMaxAge((int) accessTokenResponse.getExpiresIn());
-            response.addCookie(newCookie);
-
-            messagesList.add("Login Success");
-            return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
-        }catch (Exception e){
-            messagesList.add(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
+                                                             HttpServletResponse response) throws UnirestException {
+        Map<String, String> messagesList = new HashMap<>();
+        if(!userService.existsByUsernameAndPassword(loginRequest.getUsername(), loginRequest.getPassword())){
+            messagesList.put(Constans.MESSAGE, "Username or Password is Wrong");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
         }
+        Keycloak keycloak = keycloakConfig.newKeycloakBuilderWithPasswordCredentials(loginRequest.getUsername(), loginRequest.getPassword()).build();
+        AccessTokenResponse accessTokenResponse = keycloak.tokenManager().getAccessToken();
+        Cookie newCookie = new Cookie(Constans.ACCESS_TOKEN, accessTokenResponse.getToken());
+        newCookie.setHttpOnly(true);
+        newCookie.setPath("/");
+        newCookie.setSecure(true);
+        newCookie.setMaxAge((int) accessTokenResponse.getExpiresIn());
+        response.addCookie(newCookie);
+
+        messagesList.put(Constans.MESSAGE, "Login Success");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
     }
 
     @GetMapping("/profile")
     @RolesAllowed("member")
     public ResponseEntity<ResponseData<UserResponse>> profileUser(Principal principal) {
-        List<String> messagesList = new ArrayList<>();
+        Map<String, String> messagesList = new HashMap<>();
         try {
             UserResponse userResponse = userService.getProfile(principal);
-            messagesList.add("Success");
+            messagesList.put(Constans.MESSAGE, "Success");
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, userResponse));
         }catch (Exception e){
-            messagesList.add(e.getMessage());
+            messagesList.put(Constans.MESSAGE, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
         }
     }
 
     @PutMapping("/update")
     @RolesAllowed("member")
-    public ResponseEntity<ResponseData<UserResponse>> updateUser(Principal principal, @Valid @RequestBody UpdateProfileRequest updateProfileRequest, Errors errors) throws UnirestException {
+    public ResponseEntity<ResponseData<UserResponse>> updateUser(Principal principal, @Valid @RequestBody UpdateProfileRequest updateProfileRequest) throws UnirestException, UserException {
         UserResponse userResponse = userService.getProfile(principal);
-        List<String> messagesList = new ArrayList<>();
-        try {
-            if (errors.hasErrors()) {
-                for (ObjectError error : errors.getAllErrors()) {
-                    messagesList.add(error.getDefaultMessage());
-                }
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
-            }
-            List<String> cekValid = userService.existsByEmailUsernameNoHpWithOtherUsername(updateProfileRequest, userResponse.getId());
-            if (cekValid.size() > 0) {
-                messagesList.addAll(cekValid);
-                return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
-            }
-            UserResponse update = userService.updateUser(userResponse.getId(), updateProfileRequest);
-            messagesList.add("User Updated");
+        Map<String, String> messagesList = new HashMap<>();
+            String idKeycloak = userService.getIdKeycloak(principal);
+            UserResponse update = userService.updateUser(idKeycloak,userResponse.getId(), updateProfileRequest);
+            messagesList.put(Constans.MESSAGE, "User Updated");
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, update));
-        }catch (Exception e){
-            messagesList.add(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
-        }
-    }
-
-    @PostMapping("/image")
-    @RolesAllowed("member")
-    public ResponseEntity<ResponseData<UserResponse>> uploadImage(@RequestParam("image") MultipartFile image, Principal principal) throws IOException {
-        UserResponse userResponse = userService.getProfile(principal);
-        List<String> messagesList = new ArrayList<>();
-//        try {
-            System.out.println(image.getOriginalFilename());
-            UserResponse update = userService.uploadImage(image, userResponse.getId());
-            messagesList.add("Image has been uploaded");
-            return ResponseEntity.ok(new ResponseData<>(true, messagesList, update));
-//        }catch (Exception e){
-//            messagesList.add(e.getMessage());
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseData<>(false, messagesList, null));
-//        }
     }
 
 }

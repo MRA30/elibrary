@@ -1,5 +1,7 @@
 package com.elibrary.services;
 
+import com.elibrary.Exception.BusinessNotFound;
+import com.elibrary.Exception.UserException;
 import com.elibrary.config.KeycloakConfig;
 import com.elibrary.dto.request.RegisterEmployeeRequest;
 import com.elibrary.dto.request.RegisterMemberRequest;
@@ -18,12 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
 import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -68,6 +66,13 @@ public class UserService {
         return findByUsername(username);
       }
 
+      public String getIdKeycloak(Principal principal){
+        String idKeycloak = ((KeycloakAuthenticationToken) principal)
+                .getAccount().getKeycloakSecurityContext()
+                .getToken().getSubject();
+        return idKeycloak;
+      }
+
       public UserResponse findByUsername(String username){
         Optional<User> user = userRepo.findByUsername(username);
           return user.map(this::convertUserToUserResponse).orElse(null);
@@ -83,6 +88,10 @@ public class UserService {
 
     public boolean existByUsername(String username) { return userRepo.existsByUsername(username);}
 
+    public boolean existsByNumberIdentity(String numberIdentity){
+        return userRepo.existsByNumberIdentity("EM" + numberIdentity);
+    }
+
     public UserResponse findBynoHp(String noHp){
         User user = userRepo.findBynoHp(noHp);
         return convertUserToUserResponse(user);
@@ -96,22 +105,22 @@ public class UserService {
         return false;
     }
 
-    public List<String> existsByEmailUsernameNoHpWithOtherUsername(UpdateProfileRequest updateProfileRequest, long id){
-        List<String> messagesList = new ArrayList<>();
-        long idEmail = findByEmail(updateProfileRequest.getEmail()).getId();
-        long idUsername = findByUsername(updateProfileRequest.getUsername()).getId();
-        long idNoHp = findBynoHp(updateProfileRequest.getNoHp()).getId();
-        if(existsByEmail(updateProfileRequest.getEmail()) && idEmail != id){
-            messagesList.add("Email already exists");
-        }
-        if(existByUsername(updateProfileRequest.getUsername()) && idUsername != id){
-            messagesList.add("Username already exists");
-        }
-        if(existsBynoHp(updateProfileRequest.getNoHp()) && idNoHp != id){
-            messagesList.add("No Hp already exists");
-        }
-        return messagesList;
-    }
+//    public List<String> existsByEmailUsernameNoHpWithOtherUsername(UpdateProfileRequest updateProfileRequest, long id){
+//        List<String> messagesList = new ArrayList<>();
+//        long idEmail = findByEmail(updateProfileRequest.getEmail()).getId();
+//        long idUsername = findByUsername(updateProfileRequest.getUsername()).getId();
+//        long idNoHp = findBynoHp(updateProfileRequest.getNoHp()).getId();
+//        if(existsByEmail(updateProfileRequest.getEmail()) && idEmail != id){
+//            messagesList.add("Email already exists");
+//        }
+//        if(existByUsername(updateProfileRequest.getUsername()) && idUsername != id){
+//            messagesList.add("Username already exists");
+//        }
+//        if(existsBynoHp(updateProfileRequest.getNoHp()) && idNoHp != id){
+//            messagesList.add("No Hp already exists");
+//        }
+//        return messagesList;
+//    }
 
 //    public User getUser(){
 //        return userRepo.findByUsername(principal().getName());
@@ -131,8 +140,7 @@ public class UserService {
             user.getNoHp(),
             user.getAddress(),
             user.getEmail(),
-            user.getUserRole(),
-            user.getImage()
+            user.getUserRole()
 //            user.getBorrows(),
 //            user.getBookRequests()
         );
@@ -143,9 +151,14 @@ public class UserService {
         return user.orElse(null);
     }
 
-    public UserResponse findByIdUserResponse(long id){
+    public UserResponse findByIdUserResponse(long id) throws BusinessNotFound {
         Optional<User> user = userRepo.findById(id);
-        return user.map(this::convertUserToUserResponse).orElse(null);
+        if(user.isPresent()){
+            return convertUserToUserResponse(user.get());
+        }
+        else {
+            throw new BusinessNotFound("User not found");
+        }
     }
 
     public UserResponse findByEmail(String email){
@@ -160,7 +173,19 @@ public class UserService {
         return userRepo.findAllEnabled();
     }
 
-    public UserResponse registerEmployee(RegisterEmployeeRequest request){
+    public UserResponse registerEmployee(RegisterEmployeeRequest request) throws UserException {
+        if(existsByNumberIdentity(request.getNumberIdentity())){
+            throw new UserException("Number Identity already exists");
+        }
+        if(existByUsername(request.getUsername())){
+            throw new UserException("Username already exists");
+        }
+        if(existsBynoHp(request.getNoHp())){
+            throw new UserException("No Hp already exists");
+        }
+        if(existsByEmail(request.getEmail())){
+            throw new UserException("Email already exists");
+        }
         UsersResource usersResource = keycloakConfig.getInstance().realm(realm).users();
         String emailLowerCase = request.getEmail().toLowerCase();
         request.setEmail(emailLowerCase);
@@ -200,7 +225,16 @@ public class UserService {
         return convertUserToUserResponse(user);
     }
 
-    public UserResponse registerMember(RegisterMemberRequest request) {
+    public UserResponse registerMember(RegisterMemberRequest request) throws UserException {
+        if (existByUsername(request.getUsername())) {
+            throw new UserException("Username already exists");
+        }
+        if (existsBynoHp(request.getNoHp())) {
+            throw new UserException("No Hp already exists");
+        }
+        if (existsByEmail(request.getEmail())) {
+            throw new UserException("Email already exists");
+        }
         UsersResource usersResource = keycloakConfig.getInstance().realm(realm).users();
         String emailLowerCase = request.getEmail().toLowerCase();
         request.setEmail(emailLowerCase);
@@ -235,14 +269,29 @@ public class UserService {
         );
 
         var response = usersResource.create(userKeycloak);
+        System.out.println(response.getStatus());
          if(response.getStatus() == 201){
              userRepo.save(user);
          }
         return convertUserToUserResponse(user);
     }
 
-    public UserResponse updateUser(long id, UpdateProfileRequest request) throws UnirestException {
+    public UserResponse updateUser(String idKeycloak, long id, UpdateProfileRequest request) throws UnirestException, UserException {
+        long idEmail = findByEmail(request.getEmail()).getId();
+        long idUsername = findByUsername(request.getUsername()).getId();
+        long idNoHp = findBynoHp(request.getNoHp()).getId();
+        if(existsByEmail(request.getEmail()) && idEmail != id){
+            throw new UserException("Email already exists");
+        }
+        if(existByUsername(request.getUsername()) && idUsername != id){
+            throw new UserException("Username already exists");
+        }
+        if(existsBynoHp(request.getNoHp()) && idNoHp != id){
+            throw new UserException("No Hp already exists");
+        }
         UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setId(idKeycloak);
+        userRepresentation.setUsername(request.getUsername());
         userRepresentation.setFirstName(request.getFirstName());
         userRepresentation.setLastName(request.getLastName());
         userRepresentation.setEmail(request.getEmail());
@@ -288,27 +337,6 @@ public class UserService {
         List<User> members = userRepo.findAllWithoutPaging(search);
         return members.stream().map(this::convertUserToUserResponse).collect(Collectors.toList());
     }
-
-    public UserResponse uploadImage(MultipartFile image, Long id) throws IOException {
-        System.out.println(image.getOriginalFilename());
-        String originalNameImage = image.getOriginalFilename();
-        int index = originalNameImage.lastIndexOf(".");
-
-        String formatImage = "";
-        if(index > 0){
-            formatImage = "." + originalNameImage.substring(index + 1);
-        }
-        String imageName = UUID.randomUUID() + formatImage;
-        System.out.println(imageName);
-        String userDirectory = Paths.get("").toAbsolutePath().toString();
-        User user = findById(id);
-
-        image.transferTo(new File(userDirectory + "/src/main/resources/images/" + imageName));
-        user.setImage(imageName);
-
-        return convertUserToUserResponse(userRepo.save(user));
-    }
-
     private static CredentialRepresentation createPasswordCredentials(String password) {
         CredentialRepresentation passwordCredentials = new CredentialRepresentation();
         passwordCredentials.setTemporary(false);

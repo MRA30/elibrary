@@ -31,7 +31,6 @@ public class BookRequestdto {
     private Integer quantity;
 
     @NotNull(message = "category must not be empty")
-    @CategoryIdValidation(message = "category does not exist")
     private Long category;
 
     private String synopsis;

@@ -1,5 +1,7 @@
 package com.elibrary.services;
 
+import com.elibrary.Exception.BusinessNotFound;
+import com.elibrary.Exception.ForbiddenException;
 import com.elibrary.dto.request.BookRequestRequest;
 import com.elibrary.dto.response.BookRequestResponse;
 import com.elibrary.model.entity.BookRequest;
@@ -44,9 +46,26 @@ public class BookRequestService {
         return bookRequest.orElse(null);
     }
 
-    public BookRequestResponse findByIdResponse(long id){
+    public BookRequestResponse findByIdResponse(long id) throws BusinessNotFound {
         Optional<BookRequest> bookRequest = bookRequestRepo.findById(id);
-        return bookRequest.map(this::convertBookRequestToBookRequestReponse).orElse(null);
+        if (bookRequest.isPresent()){
+            return convertBookRequestToBookRequestReponse(bookRequest.get());
+        }else {
+            throw new BusinessNotFound("Book Request Not Found");
+        }
+    }
+
+    public BookRequestResponse findByIdResponseMember(long id, long userId) throws BusinessNotFound, ForbiddenException {
+        Optional<BookRequest> bookRequest = bookRequestRepo.findById(id);
+        if (bookRequest.isPresent()){
+            if(bookRequest.get().getUser().getId() == userId) {
+                return convertBookRequestToBookRequestReponse(bookRequest.get());
+            }else {
+                throw new ForbiddenException("Access Denied");
+            }
+        }else {
+            throw new BusinessNotFound("Book Request Not Found");
+        }
     }
 
     public BookRequestResponse createBookRequest(long id, BookRequestRequest request){
@@ -59,11 +78,15 @@ public class BookRequestService {
         return convertBookRequestToBookRequestReponse(bookRequestRepo.save(bookRequest));
     }
 
-    public BookRequestResponse updateBookRequest(long id,BookRequestRequest request){
+    public BookRequestResponse updateBookRequest(long id,BookRequestRequest request) throws BusinessNotFound {
         BookRequest bookRequest = findById(id);
-        bookRequest.setAvailable(request.isAvailable());
-        bookRequest.setDescription(request.getDescription());
-        return convertBookRequestToBookRequestReponse(bookRequestRepo.save(bookRequest));
+        if (bookRequest != null){
+            bookRequest.setAvailable(request.isAvailable());
+            bookRequest.setDescription(request.getDescription());
+            return convertBookRequestToBookRequestReponse(bookRequestRepo.save(bookRequest));
+        }else {
+            throw new BusinessNotFound("Book Request not found");
+        }
     }
 
      public Page<BookRequestResponse> searchBookRequest(String search, boolean available, Integer page, Integer size, String sortBy, String direction){
@@ -96,8 +119,13 @@ public class BookRequestService {
                  pageable, totalElements);
      }
 
-    public void delete(long id){
-        bookRequestRepo.deleteById(id);
+    public void delete(long id) throws BusinessNotFound {
+        Optional<BookRequest> bookRequest = bookRequestRepo.findById(id);
+        if(bookRequest.isPresent()){
+            bookRequestRepo.delete(bookRequest.get());
+        }else {
+            throw new BusinessNotFound("Book Request not found");
+        }
     }
 
 }

@@ -19,8 +19,8 @@ public class UpdateProfileRequest {
     @NotEmpty(message = "last name cannot be empty")
     private String lastName;
 
-    @GenderValidation
     @NotEmpty(message = "gender is required")
+    @GenderValidation
     private String Gender;
     
     @NotEmpty(message = "no hp is required")

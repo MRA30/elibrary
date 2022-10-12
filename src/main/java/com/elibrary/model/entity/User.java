@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
 @Getter
@@ -17,7 +18,7 @@ import javax.persistence.*;
         generator = ObjectIdGenerators.PropertyGenerator.class,
         property = "id"
 )
-public class User extends Image {
+public class User{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,23 +59,6 @@ public class User extends Image {
     // contructor without id
     public User(String numberIdentity, String username, String firstName, String lastName, boolean enabled, String gender, String noHp,
                 String address, String email, String password, String userRole) {
-        this.numberIdentity = numberIdentity;
-        this.username = username;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.enabled = enabled;
-        this.gender = gender;
-        this.noHp = noHp;
-        this.address = address;
-        this.email = email;
-        this.password = password;
-        this.userRole = userRole;
-    }
-
-    public User(Long id,String numberIdentity, String username, String firstName, String lastName, boolean enabled, String gender, String noHp,
-                String address, String email, String password, String userRole, String image, User user) {
-        super(image, user);
-        this.id = id;
         this.numberIdentity = numberIdentity;
         this.username = username;
         this.firstName = firstName;

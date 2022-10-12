@@ -65,10 +65,19 @@ public class KeycloakConfig {
                 .header("Authorization", "Bearer " + getInstance().tokenManager().getAccessTokenString())
                 .header("Content-Type", "application/json")
                 .body("{\n" +
+//                        "    \"username\":username \"" + userRepresentation.getUsername() + "\",\n" +
                         "    \"firstName\": \"" + userRepresentation.getFirstName() + "\",\n" +
                         "    \"lastName\": \"" + userRepresentation.getLastName() + "\",\n" +
                         "    \"email\": \"" + userRepresentation.getEmail() + "\"\n" +
                         "}")
+                .asJson().getBody();
+    }
+
+    public JsonNode getAllUsers() throws UnirestException {
+        String url = serverUrl + "/admin/realms/" + realm + "/users";
+        return Unirest.get(url)
+                .header("Authorization", "Bearer " + getInstance().tokenManager().getAccessTokenString())
+                .header("Content-Type", "application/json")
                 .asJson().getBody();
     }
 

@@ -12,6 +12,5 @@ public class CategoryRequest {
     private Long id;
     
     @NotEmpty(message = "Category Name must not be empty")
-    @CategoryNameValidation(message = "Category name already exists")
     private String category;
 }

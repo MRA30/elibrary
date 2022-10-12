@@ -1,6 +1,9 @@
 package com.elibrary.services;
 
 import com.elibrary.Constans;
+import com.elibrary.Exception.BorrowException;
+import com.elibrary.Exception.BusinessNotFound;
+import com.elibrary.Exception.ForbiddenException;
 import com.elibrary.config.OneSignalConfig;
 import com.elibrary.dto.request.BorrowRequestAdd;
 import com.elibrary.dto.request.BorrowRequestUpdate;
@@ -66,12 +69,23 @@ public class BorrowService {
         return null;
     }
 
-    public BorrowResponse findByIdResponse(long id){
+    public BorrowResponse findByIdResponse(long id) throws BusinessNotFound {
        Optional<Borrow> borrow = borrowRepo.findById(id);
        if(borrow.isPresent()){
            return convertBorrowToBorrowResponse(borrow.get());
        }
-       return null;
+       throw new BusinessNotFound("Borrow not found");
+    }
+
+    public BorrowResponse findByIdResponseMember(long id, long userId) throws BusinessNotFound, ForbiddenException {
+        Optional<Borrow> borrow = borrowRepo.findById(id);
+        if(borrow.isPresent()){
+            if(borrow.get().getUser().getId() != userId) {
+                throw new ForbiddenException("Access denied");
+            }
+            return convertBorrowToBorrowResponse(borrow.get());
+        }
+        throw new BusinessNotFound("Borrow not found");
     }
 
     public boolean checkDuplicateValue(List<BorrowRequestAdd> borrowRequestAdd){
@@ -179,15 +193,38 @@ public class BorrowService {
         );
     }
 
-    public List<BorrowResponse> addBorrows(List<BorrowRequestAdd> request){
+    public List<BorrowResponse> addBorrows(List<BorrowRequestAdd> request) throws BorrowException {
+        if(checkDuplicateValue(request)){
+            throw new BorrowException("User can't borrow same book");
+        }
+        if(request.size() > 3){
+            throw new BorrowException("Maximum borrow is 3");
+        }
+        List<String> message = checkUserBorrows(request);
+        if (message.size() > 0) {
+            throw new BorrowException(String.join(", ", message));
+        }
+        if(countUserBorrows(request.get(0).getUserId()) >= 3){
+            throw new BorrowException("User reached maximum borrow");
+        }
+        for(BorrowRequestAdd borrowRequestAdd : request){
+            Book book = bookService.findById(borrowRequestAdd.getBookId());
+            if(countBookBorrow(borrowRequestAdd.getBookId()) - bookService.findById(borrowRequestAdd.getBookId()).getQuantity() == 0){
+                throw new BorrowException("Book " + bookService.findById(borrowRequestAdd.getBookId()) + " is not available now");
+            }
+        }
+        if (countUserBorrows(request.get(0).getUserId()) + request.size() > 3){
+            throw new BorrowException("User can only borrow " + (3 - countUserBorrows(request.get(0).getUserId())) + " books");
+        }
         List<Borrow> borrow = borrowRepo.saveAll(request.stream().map(this::convertBorrowRequestToBorrowAdd).collect(Collectors.toList()));
         return borrow.stream().map(this::convertBorrowToBorrowResponse).collect(Collectors.toList());
     }
 
-    public BorrowResponse updateBorrow(long id, BorrowRequestUpdate request){
-        System.out.println("id " + id);
+    public BorrowResponse updateBorrow(long id, BorrowRequestUpdate request) throws BusinessNotFound {
         Borrow borrow = findById(id);
-        System.out.println(borrow);
+        if(borrow == null){
+            throw new BusinessNotFound("Borrow not found");
+        }
         double fine = 0;
         Date now = new Date();
         long diff = now.getTime() - borrow.getReturnDate().getTime();
