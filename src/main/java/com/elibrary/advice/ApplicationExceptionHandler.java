@@ -73,7 +73,13 @@ public class ApplicationExceptionHandler {
     @ExceptionHandler(value = {BorrowException.class})
     public ResponseData<Map<String, String>> handleBorrowException(BorrowException ex) {
         Map<String, String> errorMap = new HashMap<>();
-        errorMap.put(Constans.MESSAGE, ex.getMessage());
+        if(ex.getMessage().toLowerCase().contains("book")) {
+            errorMap.put("bookId", ex.getMessage());
+        } else if(ex.getMessage().toLowerCase().contains("user")) {
+            errorMap.put("userId", ex.getMessage());
+        }else{
+            errorMap.put(Constans.MESSAGE, ex.getMessage());
+        }
         return new ResponseData<>(false, errorMap, null);
     }
 

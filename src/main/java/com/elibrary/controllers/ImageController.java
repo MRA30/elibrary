@@ -1,5 +1,7 @@
 package com.elibrary.controllers;
 
+import com.elibrary.Constans;
+import com.elibrary.Exception.BusinessNotFound;
 import com.elibrary.dto.response.ResponseData;
 import com.elibrary.services.ImageService;
 import com.elibrary.services.UserService;
@@ -13,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.HashMap;
@@ -30,29 +33,29 @@ public class ImageController {
 
     @GetMapping("/{image}")
     public void getImage(@PathVariable String image, HttpServletResponse response) throws IOException {
-        var imageFile = new ClassPathResource("/images/" + image);
-        System.out.println(imageFile.getInputStream());
-
+        var imgFile = new ClassPathResource("/images/" + image);
+        System.out.println(imgFile.getInputStream());
         response.setContentType(MediaType.IMAGE_JPEG_VALUE);
-        StreamUtils.copy(imageFile.getInputStream(), response.getOutputStream());
+        StreamUtils.copy(imgFile.getInputStream(), response.getOutputStream());
     }
 
     @PostMapping("/upload/user")
     @RolesAllowed("member")
     public ResponseEntity<ResponseData<?>> uploadImageUser(@RequestParam("image") MultipartFile image, Principal principal) throws IOException {
         Map<String, String> messagesList = new HashMap<>();
-            long id = userService.getProfile(principal).getId();
-            imageService.uploadImageUser(image, id);
-            messagesList.put("message", "Image uploaded successfully");
-            return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
+        long id = userService.getProfile(principal).getId();
+        System.out.println(image.getOriginalFilename());
+        imageService.uploadImageUser(image, id);
+        messagesList.put(Constans.MESSAGE, "Image uploaded successfully");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
     }
 
     @PostMapping("/upload/book/{id}")
     @RolesAllowed("employee")
-    public ResponseEntity<ResponseData<?>> uploadImageBook(@RequestParam("image") MultipartFile image, @PathVariable("id") long id) throws IOException {
+    public ResponseEntity<ResponseData<?>> uploadImageBook(@RequestParam("image") MultipartFile image, @PathVariable("id") long id) throws IOException, BusinessNotFound {
         Map<String, String> messagesList = new HashMap<>();
-            imageService.uploadImageBook(image, id);
-            messagesList.put("message", "Image uploaded successfully");
-            return ResponseEntity.ok(new ResponseData<>(true, messagesList , null));
+        imageService.uploadImageBook(image, id);
+        messagesList.put(Constans.MESSAGE, "Image uploaded successfully");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList , null));
     }
 }

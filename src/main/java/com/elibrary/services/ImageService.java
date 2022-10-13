@@ -2,6 +2,7 @@ package com.elibrary.services;
 
 
 import com.elibrary.Constans;
+import com.elibrary.Exception.BusinessNotFound;
 import com.elibrary.model.entity.Book;
 import com.elibrary.model.entity.Image;
 import com.elibrary.model.entity.User;
@@ -38,7 +39,10 @@ public class ImageService {
     }
 
     public void uploadImageUser(MultipartFile image, Long id) throws IOException {
-        System.out.println(image.getOriginalFilename());
+        if(image.isEmpty()){
+            throw new IOException("Image is empty");
+        }
+        System.out.println(image.getOriginalFilename() + " service");
         String originalNameImage = image.getOriginalFilename();
         assert originalNameImage != null;
         int index = originalNameImage.lastIndexOf(".");
@@ -58,25 +62,33 @@ public class ImageService {
         save(imageSave);
     }
 
-    public void uploadImageBook(MultipartFile image, Long id) throws IOException {
-        System.out.println(image.getOriginalFilename());
-        String originalNameImage = image.getOriginalFilename();
-        assert originalNameImage != null;
-        int index = originalNameImage.lastIndexOf(".");
-
-        String formatImage = "";
-        if(index > 0){
-            formatImage = "." + originalNameImage.substring(index + 1);
+    public void uploadImageBook(MultipartFile image, Long id) throws IOException, BusinessNotFound {
+        if(image.isEmpty()){
+            throw new IOException("Image is empty");
         }
-        String imageName = UUID.randomUUID() + formatImage;
-        image.transferTo(new File(Constans.userDirectory + File.separator + imageName));
-        Book book = bookService.findById(id);
+        if(bookService.findById(id) != null){
+            System.out.println(image.getOriginalFilename());
+            String originalNameImage = image.getOriginalFilename();
+            assert originalNameImage != null;
+            int index = originalNameImage.lastIndexOf(".");
 
-        Image imageSave = new Image(
-                imageName,
-                book
-        );
-        save(imageSave);
+            String formatImage = "";
+            if(index > 0){
+                formatImage = "." + originalNameImage.substring(index + 1);
+            }
+            String imageName = UUID.randomUUID() + formatImage;
+            image.transferTo(new File(Constans.userDirectory + File.separator + imageName));
+            Book book = bookService.findById(id);
+
+            Image imageSave = new Image(
+                    imageName,
+                    book
+            );
+            save(imageSave);
+        }else{
+            throw new BusinessNotFound("Book not found");
+        }
+
     }
 
     public Image save(Image image){

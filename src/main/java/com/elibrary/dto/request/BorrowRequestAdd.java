@@ -4,15 +4,17 @@ import com.elibrary.validators.BookIdValidation;
 import com.elibrary.validators.UserIdValidation;
 import lombok.Data;
 
+import javax.validation.constraints.*;
+
 @Data
 public class BorrowRequestAdd {
     
     private Long id;
 
-    @BookIdValidation(message = "Book does not exist")
-    private Long bookId;
+    @NotNull(message = "Book id must not be null")
+    private long bookId;
 
-    @UserIdValidation(message = "User does not exist")
+    @NotNull(message = "User id is required")
     private long userId;
 
     private String description;

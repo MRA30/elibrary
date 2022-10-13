@@ -1,5 +1,7 @@
 package com.elibrary;
 
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import java.nio.file.FileSystems;
 
 public class Constans {
@@ -16,6 +18,9 @@ public class Constans {
     public final static String userDirectory = FileSystems.getDefault().getPath("").toAbsolutePath() + "/src/main/resources/images";
 
     public final static String MESSAGE = "message";
+
+    public final static String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+
 
 
 }

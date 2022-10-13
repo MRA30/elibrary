@@ -55,18 +55,12 @@ public class BorrowService {
                 new LocalDate(borrowDate.getTime() + 7 * 24 * 60 * 60 * 1000),
                 new LocalDate(now.getTime())
         ).getDays();
-        if(daydiff > 0) {
-            return daydiff;
-        }
-        return 0;
+        return Math.max(daydiff, 0);
     }
 
     public Borrow findById(long id) {
         Optional<Borrow> borrow = borrowRepo.findById(id);
-        if(borrow.isPresent()){
-            return borrow.get();
-        }
-        return null;
+        return borrow.orElse(null);
     }
 
     public BorrowResponse findByIdResponse(long id) throws BusinessNotFound {
@@ -154,30 +148,6 @@ public class BorrowService {
         );
     }
 
-//    public Borrow convertBorrowRequestToBorrowToUpdate(long id, BorrowRequestUpdate request) {
-//
-//        Borrow borrow = findById(id);
-//        double fine = 0;
-//        Date now = new Date();
-//        long sevendays = 7 * 24 * 60 * 60 * 1000;
-//        long diff = Math.abs(now.getTime() - (borrow.getBorrowDate().getTime() + sevendays));
-//        long days_difference = (diff / (1000*60*60*24)) % 365;
-//        if (days_difference > 0) {
-//            fine = days_difference * 5000;
-//        }
-//        double totalFine = fine + request.getPenalty();
-//        if (request.isLostBroken()) {
-//            Book bookBrokenOrLost = bookService.findById(borrow.getBook().getId());
-//            bookBrokenOrLost.setQuantity(bookBrokenOrLost.getQuantity() - 1);
-//            bookService.save(bookBrokenOrLost);
-//        }
-//        String description = borrow.getDescription() + ", " + request.getDescription() + ", " + "Penalty for late return " + fine + ", and penalty for damaged/lost book " + request.getPenalty();
-//        borrow.setReturned(request.isReturned());
-//        borrow.setPenalty(totalFine);
-//        borrow.setDescription(description);
-//        return borrow;
-//    }
-
     public BorrowOvertimeResponse convertBorrowToBorrowOvertimeResponse(Borrow borrow){
         int days_difference = daydiff(borrow.getBorrowDate());
         return new BorrowOvertimeResponse(
@@ -194,23 +164,32 @@ public class BorrowService {
     }
 
     public List<BorrowResponse> addBorrows(List<BorrowRequestAdd> request) throws BorrowException {
+        for (BorrowRequestAdd borrowRequestAdd : request) {
+            if(!bookService.existsById(borrowRequestAdd.getBookId())){
+                throw new BorrowException("Book " + bookService.findById(borrowRequestAdd.getBookId()).getTitle() + " doesn't exist");
+            }
+        }
+        if(!userService.existsById(request.get(0).getUserId())){
+            String fullName = userService.findById(request.get(0).getUserId()).getFirstName() + " " + userService.findById(request.get(0).getUserId()).getLastName();
+            throw new BorrowException("User " + fullName + " doesn't exist");
+        }
         if(checkDuplicateValue(request)){
             throw new BorrowException("User can't borrow same book");
         }
         if(request.size() > 3){
-            throw new BorrowException("Maximum borrow is 3");
+            throw new BorrowException("User can't borrow more than 3 books");
         }
         List<String> message = checkUserBorrows(request);
         if (message.size() > 0) {
             throw new BorrowException(String.join(", ", message));
         }
         if(countUserBorrows(request.get(0).getUserId()) >= 3){
-            throw new BorrowException("User reached maximum borrow");
+            throw new BorrowException("User can't borrow more than 3 books");
         }
         for(BorrowRequestAdd borrowRequestAdd : request){
             Book book = bookService.findById(borrowRequestAdd.getBookId());
             if(countBookBorrow(borrowRequestAdd.getBookId()) - bookService.findById(borrowRequestAdd.getBookId()).getQuantity() == 0){
-                throw new BorrowException("Book " + bookService.findById(borrowRequestAdd.getBookId()) + " is not available now");
+                throw new BorrowException("Book " + book.getTitle() + " is not available now");
             }
         }
         if (countUserBorrows(request.get(0).getUserId()) + request.size() > 3){
