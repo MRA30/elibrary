@@ -61,13 +61,13 @@ public class ApplicationExceptionHandler {
         return new ResponseData<>(false, errorMap, null);
     }
 
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(value = {Exception.class})
-    public ResponseData<Map<String, String>> handleException(Exception ex) {
-        Map<String, String> errorMap = new HashMap<>();
-        errorMap.put(Constans.MESSAGE, ex.getMessage());
-        return new ResponseData<>(false, errorMap, null);
-    }
+//    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+//    @ExceptionHandler(value = {Exception.class})
+//    public ResponseData<Map<String, String>> handleException(Exception ex) {
+//        Map<String, String> errorMap = new HashMap<>();
+//        errorMap.put(Constans.MESSAGE, ex.getMessage());
+//        return new ResponseData<>(false, errorMap, null);
+//    }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = {BorrowException.class})
@@ -79,10 +79,8 @@ public class ApplicationExceptionHandler {
 
     @ResponseStatus(HttpStatus.FORBIDDEN)
     @ExceptionHandler(value = {ForbiddenException.class})
-    public ResponseData<Map<String, String>> handleForbiddenException(ForbiddenException ex) {
-        Map<String, String> errorMap = new HashMap<>();
-        errorMap.put(Constans.MESSAGE, ex.getMessage());
-        return new ResponseData<>(false, errorMap, null);
+    public void handleForbiddenException(ForbiddenException ex) {
+
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

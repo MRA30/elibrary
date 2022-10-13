@@ -1,5 +1,7 @@
 package com.elibrary.config;
 
+import com.elibrary.Exception.CustomAccessDeniedHandler;
+import com.elibrary.Exception.CustomAuthenticationEntryPoint;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
 import org.keycloak.adapters.springsecurity.KeycloakConfiguration;
@@ -16,8 +18,6 @@ import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-
-import javax.servlet.http.HttpServletResponse;
 
 @KeycloakConfiguration
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
@@ -47,15 +47,15 @@ public class KeycloakSecurityConfig extends KeycloakWebSecurityConfigurerAdapter
         return new KeycloakSpringBootConfigResolver();
     }
 
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         super.configure(http);
         http.csrf().disable().authorizeRequests()
                 .antMatchers("/users/public/**", "/books/public/**")
                 .permitAll()
-                .anyRequest().authenticated()
-                .and().exceptionHandling().authenticationEntryPoint((Request, Response, AuthException)->
-                Response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied"))
+                .and().exceptionHandling().accessDeniedHandler(new CustomAccessDeniedHandler())
+                .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
                 .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }
 }
