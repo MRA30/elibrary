@@ -30,30 +30,26 @@ public class ImageService {
     @Autowired
     private BookService bookService;
 
-    public List<String> findAllImageByTypeAndId(String type, long id){
-        List<String> images = imageRepo.findAllImageByTypeAndId(type, id);
-        if(images.size() == 0){
-            return null;
-        }
-        return images;
-    }
+    @Autowired
+    private AmazonS3Service amazonS3Service;
 
     public void uploadImageUser(MultipartFile image, Long id) throws IOException {
         if(image.isEmpty()){
             throw new IOException("Image is empty");
         }
-        System.out.println(image.getOriginalFilename() + " service");
-        String originalNameImage = image.getOriginalFilename();
-        assert originalNameImage != null;
-        int index = originalNameImage.lastIndexOf(".");
-
-        String formatImage = "";
-        if(index > 0){
-            formatImage = "." + originalNameImage.substring(index + 1);
-        }
-        String imageName = UUID.randomUUID() + formatImage;
-        image.transferTo(new File(Constans.userDirectory + File.separator + imageName));
+//        String originalNameImage = image.getOriginalFilename();
+//        assert originalNameImage != null;
+//        int index = originalNameImage.lastIndexOf(".");
+//
+//        String formatImage = "";
+//        if(index > 0){
+//            formatImage = "." + originalNameImage.substring(index + 1);
+//        }
+//        String imageName = UUID.randomUUID() + formatImage;
+//        image.transferTo(new File(Constans.userDirectory + File.separator + imageName));
         User user = userService.findById(id);
+
+        String imageName = amazonS3Service.uploadFile(image);
 
         Image imageSave = new Image(
                 imageName,
@@ -67,17 +63,18 @@ public class ImageService {
             throw new IOException("Image is empty");
         }
         if(bookService.findById(id) != null){
-            System.out.println(image.getOriginalFilename());
-            String originalNameImage = image.getOriginalFilename();
-            assert originalNameImage != null;
-            int index = originalNameImage.lastIndexOf(".");
-
-            String formatImage = "";
-            if(index > 0){
-                formatImage = "." + originalNameImage.substring(index + 1);
-            }
-            String imageName = UUID.randomUUID() + formatImage;
-            image.transferTo(new File(Constans.userDirectory + File.separator + imageName));
+//            System.out.println(image.getOriginalFilename());
+//            String originalNameImage = image.getOriginalFilename();
+//            assert originalNameImage != null;
+//            int index = originalNameImage.lastIndexOf(".");
+//
+//            String formatImage = "";
+//            if(index > 0){
+//                formatImage = "." + originalNameImage.substring(index + 1);
+//            }
+//            String imageName = UUID.randomUUID() + formatImage;
+//            image.transferTo(new File(Constans.userDirectory + File.separator + imageName));
+            String imageName = amazonS3Service.uploadFile(image);
             Book book = bookService.findById(id);
 
             Image imageSave = new Image(
@@ -93,6 +90,17 @@ public class ImageService {
 
     public Image save(Image image){
         return imageRepo.save(image);
+    }
+
+    public void deleteImage(String image) throws BusinessNotFound {
+        if(imageRepo.findByImage(image) != null) {
+            Image imageDelete = imageRepo.findByImage(image);
+            amazonS3Service.deleteFile(image);
+            imageRepo.deleteById(imageDelete.getId());
+        }else {
+            throw new BusinessNotFound("Image not found");
+        }
+
     }
 
 }

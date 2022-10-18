@@ -104,6 +104,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
         }
         Keycloak keycloak = keycloakConfig.newKeycloakBuilderWithPasswordCredentials(loginRequest.getUsername(), loginRequest.getPassword()).build();
+        System.out.println(keycloak.tokenManager().getAccessTokenString());
         AccessTokenResponse accessTokenResponse = keycloak.tokenManager().getAccessToken();
         Cookie newCookie = new Cookie(Constans.ACCESS_TOKEN, accessTokenResponse.getToken());
         newCookie.setHttpOnly(true);
@@ -140,5 +141,14 @@ public class UserController {
             messagesList.put(Constans.MESSAGE, "User Updated");
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, update));
     }
+
+    @PostMapping("/public/activation/{token}")
+    public ResponseEntity<ResponseData<UserResponse>> verification(@PathVariable("token") String token) throws UserException, UnirestException {
+        Map<String, String> messagesList = new HashMap<>();
+        userService.verifyEmail(token);
+        messagesList.put(Constans.MESSAGE, "Verification Success");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
+    }
+
 
 }

@@ -11,4 +11,6 @@ public interface ImageRepo extends JpaRepository<Image, Long> {
     @Query(nativeQuery = true, value = "select image from image where imageable_type = ?1 and imageable_id = ?2")
     List<String> findAllImageByTypeAndId(String type, long id);
 
+    Image findByImage(String image);
+
 }

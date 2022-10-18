@@ -18,6 +18,10 @@ public interface UserRepo extends JpaRepository<User, Long>, JpaSpecificationExe
     User findByEmail(String email);
     User findBynoHp(String noHp);
 
+    User findByEmailVerificationToken(String token);
+
+    User findByPasswordResetToken(String token);
+
     boolean existsByEmail(String email);
 
     boolean existsByNumberIdentity(String numberIdentity);

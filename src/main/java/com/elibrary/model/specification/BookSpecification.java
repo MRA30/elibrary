@@ -9,19 +9,16 @@ import org.springframework.stereotype.Component;
 public class BookSpecification {
 
     public Specification<Book> filterByTitle(String search) {
-        return ((root, criteriaQuery, criteriaBuilder) ->{
-            return criteriaBuilder.like(criteriaBuilder.lower(root.get(Book_.TITLE)), "%" + search.toLowerCase() + "%");
-        }); 
+        return ((root, criteriaQuery, criteriaBuilder) ->
+                criteriaBuilder.like(criteriaBuilder.lower(root.get(Book_.TITLE)), "%" + search.toLowerCase() + "%"));
     }
     public Specification<Book> filterByAuthor(String search) {
-        return ((root, criteriaQuery, criteriaBuilder) ->{
-            return criteriaBuilder.like(criteriaBuilder.lower(root.get(Book_.AUTHOR)), "%" + search.toLowerCase() + "%");
-        }); 
+        return ((root, criteriaQuery, criteriaBuilder) ->
+                criteriaBuilder.like(criteriaBuilder.lower(root.get(Book_.AUTHOR)), "%" + search.toLowerCase() + "%"));
     }
     public Specification<Book> filterByPublisher(String search) {
-        return ((root, criteriaQuery, criteriaBuilder) ->{
-            return criteriaBuilder.like(criteriaBuilder.lower(root.get(Book_.PUBLISHER)), "%" + search.toLowerCase() + "%");
-        }); 
+        return ((root, criteriaQuery, criteriaBuilder) ->
+                criteriaBuilder.like(criteriaBuilder.lower(root.get(Book_.PUBLISHER)), "%" + search.toLowerCase() + "%"));
     }
 
     public Specification<Book> searchBook(String search) {

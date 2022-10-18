@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -20,4 +21,5 @@ public class UserResponse {
     private String address;
     private String email;
     private String userRole;
+    private List<String> images;
 }

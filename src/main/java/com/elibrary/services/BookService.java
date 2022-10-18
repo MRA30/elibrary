@@ -4,24 +4,19 @@ import com.elibrary.Exception.BusinessNotFound;
 import com.elibrary.Exception.CategoryException;
 import com.elibrary.dto.request.BookRequestdto;
 import com.elibrary.dto.response.BookResponse;
-import com.elibrary.dto.response.CategoryResponse;
 import com.elibrary.model.entity.Book;
-import com.elibrary.model.entity.Image;
+import com.elibrary.model.entity.Category;
 import com.elibrary.model.repos.BookRepo;
 import com.elibrary.model.repos.BorrowRepo;
+import com.elibrary.model.repos.ImageRepo;
 import com.elibrary.model.specification.BookSpecification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,11 +35,42 @@ public class BookService {
     @Autowired
     private BookSpecification bookSpecification;
 
+    @Autowired
+    private ImageRepo imageRepo;
+
+    public List<String> findAllImage(String type, long id){
+        return imageRepo.findAllImageByTypeAndId(type, id);
+    }
+
+    public Book save(Book book){
+        if(book.getId() != null){
+            Book currentBook = findById(book.getId());
+            currentBook.setTitle(book.getTitle());
+            currentBook.setAuthor(book.getAuthor());
+            currentBook.setPublisher(book.getPublisher());
+            currentBook.setYearPublication(book.getYearPublication());
+            currentBook.setQuantity(book.getQuantity());
+            currentBook.setCategory(book.getCategory());
+            currentBook.setSynopsis(book.getSynopsis());
+            book = currentBook;
+        }
+        return bookRepo.save(book);
+    }
+
+    public void delete(long id) throws BusinessNotFound {
+        Optional<Book> book = bookRepo.findById(id);
+        if(book.isPresent()){
+            bookRepo.deleteById(id);
+        }else{
+            throw new BusinessNotFound("Book not found");
+        }
+    }
 
     public Book findById(long id){
         Optional<Book> book = bookRepo.findById(id);
         return book.orElse(null);
     }
+
     
     public BookResponse
     convertBookToBookResponse(Book book) {
@@ -55,8 +81,9 @@ public class BookService {
             book.getPublisher(),
             book.getYearPublication(),
             book.getQuantity(),
-            book.getCategory(),
-            book.getSynopsis()
+            categoryService.convertCategoryToResponse(book.getCategory()),
+            book.getSynopsis(),
+            findAllImage("book", book.getId())
         );
     }
 
@@ -67,7 +94,7 @@ public class BookService {
             bookRequestdto.getPublisher(),
             bookRequestdto.getYearPublication(),
             bookRequestdto.getQuantity(),
-            categoryService.convertCategoryResponseToCategory(categoryService.findById(bookRequestdto.getCategory())),
+            categoryService.findById(bookRequestdto.getCategory()),
             bookRequestdto.getSynopsis()
         );
     }
@@ -79,8 +106,7 @@ public class BookService {
     public BookResponse createBook(BookRequestdto request) throws CategoryException {
         if(categoryService.existsById(request.getCategory())){
             Book book = convertBookRequestdtoToBook(request);
-            bookRepo.save(book);
-            return convertBookToBookResponse(book);
+            return convertBookToBookResponse(save(book));
         }else {
             throw new CategoryException("Category does not exist");
         }
@@ -97,11 +123,10 @@ public class BookService {
                 book.setPublisher(request.getPublisher());
                 book.setYearPublication(request.getYearPublication());
                 book.setQuantity(request.getQuantity());
-                CategoryResponse categoryResponse = categoryService.findById(request.getCategory());
-                book.setCategory(categoryService.convertCategoryResponseToCategory(categoryResponse));
+                Category category = categoryService.findById(request.getCategory());
+                book.setCategory(category);
                 book.setSynopsis(request.getSynopsis());
-                bookRepo.save(book);
-                return convertBookToBookResponse(book);
+                return convertBookToBookResponse(save(book));
             }else {
                 throw new CategoryException("Category does not exist");
             }
@@ -125,10 +150,6 @@ public class BookService {
         return bookRepo.existsByTitle(title);
     }
 
-    public Book findByTitle(String title){
-        return bookRepo.findByTitle(title);
-    }
-
     public BookResponse findByTitleResponse(String title){
         Book book = bookRepo.findByTitle(title);
         return convertBookToBookResponse(book);
@@ -150,8 +171,9 @@ public class BookService {
                                 book.getPublisher(),
                                 book.getYearPublication(),
                                 book.getQuantity() - borrowRepo.countBookBorrow(book.getId()),
-                                book.getCategory(),
-                                book.getSynopsis()))
+                                categoryService.convertCategoryToResponse(book.getCategory()),
+                                book.getSynopsis(),
+                                findAllImage("book", book.getId())))
                                         .collect(Collectors.toList()), pageable, totalElements);
     }
 
@@ -172,8 +194,9 @@ public class BookService {
                                     book.getPublisher(),
                                     book.getYearPublication(),
                                     book.getQuantity() - borrowRepo.countBookBorrow(book.getId()),
-                                    book.getCategory(),
-                                    book.getSynopsis()))
+                                    categoryService.convertCategoryToResponse(book.getCategory()),
+                                    book.getSynopsis(),
+                                    findAllImage("book", book.getId())))
                     .collect(Collectors.toList()), pageable, totalElements);
         }else {
             throw new BusinessNotFound("Category does not exist");
@@ -190,24 +213,12 @@ public class BookService {
                     book.get().getPublisher(),
                     book.get().getYearPublication(),
                     book.get().getQuantity() - borrowRepo.countBookBorrow(book.get().getId()),
-                    book.get().getCategory(),
-                    book.get().getSynopsis()
+                    categoryService.convertCategoryToResponse(book.get().getCategory()),
+                    book.get().getSynopsis(),
+                    findAllImage("book", book.get().getId())
             );
         }
         throw new BusinessNotFound("Book not found");
-    }
-
-    public void save(Book book){
-        bookRepo.save(book);
-    }
-
-    public void delete(long id) throws BusinessNotFound {
-        Optional<Book> book = bookRepo.findById(id);
-        if(book.isPresent()){
-            bookRepo.deleteById(id);
-        }else{
-            throw new BusinessNotFound("Book not found");
-        }
     }
 
 }

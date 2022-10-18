@@ -3,8 +3,13 @@ package com.elibrary.model.entity;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.List;
 
 @Entity
@@ -18,7 +23,7 @@ import java.util.List;
         generator = ObjectIdGenerators.PropertyGenerator.class,
         property = "id"
 )
-public class User{
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,6 +51,14 @@ public class User{
 
     private String userRole;
 
+    private String emailVerificationToken;
+
+    private Date emailVerificationTokenExpiry;
+
+    private String passwordResetToken;
+
+    private Date passwordResetTokenExpiry;
+
 //    @OneToMany(targetEntity = Borrow.class, cascade = CascadeType.ALL)
 //    @JoinColumn(name = "user_id", referencedColumnName = "id")
 //    @ToString.Exclude
@@ -56,7 +69,7 @@ public class User{
 //    @ToString.Exclude
 //    private List<BookRequest> bookRequests;
 
-    // contructor without id
+    // constructor without id
     public User(String numberIdentity, String username, String firstName, String lastName, boolean enabled, String gender, String noHp,
                 String address, String email, String password, String userRole) {
         this.numberIdentity = numberIdentity;

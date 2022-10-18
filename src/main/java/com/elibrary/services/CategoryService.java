@@ -28,11 +28,13 @@ public class CategoryService {
     @Autowired
     private CategorySpecification categorySpecification;
 
-    public Category convertCategoryResponseToCategory(CategoryResponse response){
-        Category category = new Category();
-        category.setId(response.getId());
-        category.setCategory(response.getCategory());
-        return category;
+    public Category save(Category category) {
+        if(category.getId() != null) {
+            Category currentCategory = findById(category.getId());
+            currentCategory.setCategory(category.getCategory());
+            category = currentCategory;
+        }
+        return categoryRepo.save(category);
     }
 
     public CategoryResponse convertCategoryToResponse(Category category){
@@ -46,9 +48,9 @@ public class CategoryService {
         return categoryRepo.existsById(id);
     }
 
-    public CategoryResponse findById(long id){
+    public Category findById(long id){
         Optional<Category> category = categoryRepo.findById(id);
-        return category.map(this::convertCategoryToResponse).orElse(null);
+        return category.orElse(null);
     }
     
     public CategoryResponse addCategory(CategoryRequest request) throws CategoryException {
@@ -57,20 +59,17 @@ public class CategoryService {
         }
         Category category = new Category();
         category.setCategory(request.getCategory());
-        categoryRepo.save(category);
-        return convertCategoryToResponse(category);
+        return convertCategoryToResponse(save(category));
     }
 
     public CategoryResponse updateCategory(Long id,CategoryRequest request) throws BusinessNotFound, CategoryException {
-        Optional<Category> category = categoryRepo.findById(id);
-        if(category.isPresent()){
-            Category category1 = category.get();
+        Category category = findById(id);
+        if(category != null){
             if(categoryRepo.existsByCategory(request.getCategory()) && !Objects.equals(categoryRepo.findByCategory(request.getCategory()).getId(), id)){
                 throw new CategoryException("Category already exists");
             }
-            category1.setCategory(request.getCategory());
-            categoryRepo.save(category1);
-            return convertCategoryToResponse(category1);
+            category.setCategory(request.getCategory());
+            return convertCategoryToResponse(save(category));
         }else {
             throw new BusinessNotFound("Category not found");
         }

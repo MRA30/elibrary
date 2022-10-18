@@ -114,11 +114,20 @@
 			<artifactId>keycloak-spring-security-adapter</artifactId>
 			<version>${keycloak.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-core</artifactId>
 			<version>${keycloak.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-s3</artifactId>
 		</dependency>
 
 		<dependency>
@@ -136,6 +145,14 @@
 				<groupId>org.keycloak.bom</groupId>
 				<artifactId>keycloak-adapter-bom</artifactId>
 				<version>19.0.0</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>com.amazonaws</groupId>
+				<artifactId>aws-java-sdk-bom</artifactId>
+				<version>1.11.1000</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

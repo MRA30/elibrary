@@ -47,6 +47,8 @@ public class ApplicationExceptionHandler {
             errorMap.put("noHp", ex.getMessage());
         }else if(ex.getMessage().toLowerCase().contains("number identity")) {
             errorMap.put("numberIdentity", ex.getMessage());
+        }else{
+            errorMap.put(Constans.MESSAGE, ex.getMessage());
         }
         return new ResponseData<>(false, errorMap, null);
     }
@@ -89,13 +91,13 @@ public class ApplicationExceptionHandler {
 
     }
 
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(value = {UnirestException.class})
-    public ResponseData<Map<String, String>> handleUnirestException(UnirestException ex) {
-        Map<String, String> errorMap = new HashMap<>();
-        errorMap.put(Constans.MESSAGE, ex.getMessage());
-        return new ResponseData<>(false, errorMap, null);
-    }
+//    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+//    @ExceptionHandler(value = {UnirestException.class})
+//    public ResponseData<Map<String, String>> handleUnirestException(UnirestException ex) {
+//        Map<String, String> errorMap = new HashMap<>();
+//        errorMap.put(Constans.MESSAGE, ex.getMessage());
+//        return new ResponseData<>(false, errorMap, null);
+//    }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = {IOException.class})

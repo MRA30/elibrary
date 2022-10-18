@@ -3,6 +3,9 @@ package com.elibrary.model.entity;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.sql.Date;
@@ -17,7 +20,8 @@ import java.sql.Date;
 @JsonIdentityInfo(
         generator = ObjectIdGenerators.PropertyGenerator.class,
         property = "id")
-public class Borrow {
+@EntityListeners(AuditingEntityListener.class)
+public class Borrow extends BaseEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,8 +45,8 @@ public class Borrow {
 
     private String description;
 
-    public Borrow(Book book, User user, Date borrowDate, Date returnDate, boolean isReturned, double penalty,
-            String description) {
+//    constructor without id
+    public Borrow(Book book, User user, Date borrowDate, Date returnDate, boolean isReturned, double penalty, String description) {
         this.book = book;
         this.user = user;
         this.borrowDate = borrowDate;

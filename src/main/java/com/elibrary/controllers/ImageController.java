@@ -1,8 +1,10 @@
 package com.elibrary.controllers;
 
+import com.amazonaws.services.s3.model.Bucket;
 import com.elibrary.Constans;
 import com.elibrary.Exception.BusinessNotFound;
 import com.elibrary.dto.response.ResponseData;
+import com.elibrary.services.AmazonS3Service;
 import com.elibrary.services.ImageService;
 import com.elibrary.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +17,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -31,12 +33,13 @@ public class ImageController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private AmazonS3Service amazonS3Service;
+
     @GetMapping("/{image}")
     public void getImage(@PathVariable String image, HttpServletResponse response) throws IOException {
-        var imgFile = new ClassPathResource("/images/" + image);
-        System.out.println(imgFile.getInputStream());
         response.setContentType(MediaType.IMAGE_JPEG_VALUE);
-        StreamUtils.copy(imgFile.getInputStream(), response.getOutputStream());
+        StreamUtils.copy(amazonS3Service.downloadFile(image), response.getOutputStream());
     }
 
     @PostMapping("/upload/user")
@@ -57,5 +60,22 @@ public class ImageController {
         imageService.uploadImageBook(image, id);
         messagesList.put(Constans.MESSAGE, "Image uploaded successfully");
         return ResponseEntity.ok(new ResponseData<>(true, messagesList , null));
+    }
+
+    @GetMapping("/buckets")
+    @RolesAllowed("employee")
+    public ResponseEntity<ResponseData<List<Bucket>>> getAllBuckets() {
+        Map<String, String> messagesList = new HashMap<>();
+        messagesList.put(Constans.MESSAGE, "List of buckets S3");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, amazonS3Service.getAllBuckets()));
+    }
+
+    @DeleteMapping("delete/{image}")
+    @RolesAllowed("member")
+    public ResponseEntity<ResponseData<?>> deleteImage(@PathVariable("image") String image) throws BusinessNotFound {
+        Map<String, String> messagesList = new HashMap<>();
+        imageService.deleteImage(image);
+        messagesList.put(Constans.MESSAGE, "Image deleted successfully");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
     }
 }

@@ -21,6 +21,13 @@ public class Constans {
 
     public final static String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
 
+    public final static String AWSS3_ACCESS_KEY = "AKIAWEISPLJROECY6V4V";
 
+    public final static String AWSS3_SECRET_KEY = "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";
 
+    public final static String AWSS3_BUCKET_NAME = "elibrary-springboot";
+
+    public final static String AWSS3_REGION = "ap-southeast-1";
+
+    public final static String AWSS3_URL = "https://elibrary-springboot.s3-ap-southeast-1.amazonaws.com/";
 }

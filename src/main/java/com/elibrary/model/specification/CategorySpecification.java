@@ -9,8 +9,7 @@ import org.springframework.stereotype.Component;
 public class CategorySpecification {
 
     public Specification<Category> searchCategory(String search) {
-        return ((root, criteriaQuery, criteriaBuilder) ->{
-            return criteriaBuilder.like(criteriaBuilder.lower(root.get(Category_.CATEGORY)), "%" + search.toLowerCase() + "%");
-        });
+        return ((root, criteriaQuery, criteriaBuilder) ->
+                criteriaBuilder.like(criteriaBuilder.lower(root.get(Category_.CATEGORY)), "%" + search.toLowerCase() + "%"));
     }
 }

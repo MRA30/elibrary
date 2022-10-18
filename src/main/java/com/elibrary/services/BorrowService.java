@@ -49,6 +49,21 @@ public class BorrowService {
     @Autowired
     private OneSignalConfig oneSignalConfig;
 
+    private Borrow save(Borrow borrow) {
+        if(borrow.getId() != null){
+            Borrow currentBorrow = findById(borrow.getId());
+            currentBorrow.setBook(borrow.getBook());
+            currentBorrow.setUser(borrow.getUser());
+            currentBorrow.setBorrowDate(borrow.getBorrowDate());
+            currentBorrow.setReturnDate(borrow.getReturnDate());
+            currentBorrow.setReturned(borrow.isReturned());
+            currentBorrow.setPenalty(borrow.getPenalty());
+            currentBorrow.setDescription(borrow.getDescription());
+            borrow = currentBorrow;
+        }
+        return borrowRepo.save(borrow);
+    }
+
     public int daydiff(Date borrowDate) {
         Date now = new Date();
         int daydiff = Days.daysBetween(
@@ -226,8 +241,7 @@ public class BorrowService {
             borrow.setPenalty(totalFine);
         }
         borrow.setDescription(request.getDescription());
-        borrowRepo.save(borrow);
-        return convertBorrowToBorrowResponse(borrow);
+        return convertBorrowToBorrowResponse(save(borrow));
     }
 
     public Page<BorrowResponse> findAllBorrows(String search, boolean returned, int size, int page, String sortBy, String direction){

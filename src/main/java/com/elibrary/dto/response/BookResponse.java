@@ -18,6 +18,7 @@ public class BookResponse {
     private String publisher;
     private String yearPublication;
     private Integer quantity;
-    private Category category;
+    private CategoryResponse categoryResponse;
     private String synopsis;
+    private List<String> images;
 }

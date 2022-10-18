@@ -25,6 +25,17 @@ public class BookRequestService {
     @Autowired
     private UserService userService;
 
+    public BookRequest save(BookRequest bookRequest) {
+        if(bookRequest.getId() != null){
+            BookRequest currentBookRequest = findById(bookRequest.getId());
+            currentBookRequest.setTitle(bookRequest.getTitle());
+            currentBookRequest.setDescription(bookRequest.getDescription());
+            currentBookRequest.setAvailable(bookRequest.isAvailable());
+            bookRequest = currentBookRequest;
+        }
+        return bookRequestRepo.save(bookRequest);
+    }
+
     public BookRequestResponse convertBookRequestToBookRequestReponse(BookRequest bookRequest){
         return new BookRequestResponse(
         bookRequest.getId(),
@@ -75,7 +86,7 @@ public class BookRequestService {
         bookRequest.setUser(user);
         bookRequest.setAvailable(false);
         bookRequest.setDescription(request.getDescription());
-        return convertBookRequestToBookRequestReponse(bookRequestRepo.save(bookRequest));
+        return convertBookRequestToBookRequestReponse(save(bookRequest));
     }
 
     public BookRequestResponse updateBookRequest(long id,BookRequestRequest request) throws BusinessNotFound {
@@ -83,7 +94,7 @@ public class BookRequestService {
         if (bookRequest != null){
             bookRequest.setAvailable(request.isAvailable());
             bookRequest.setDescription(request.getDescription());
-            return convertBookRequestToBookRequestReponse(bookRequestRepo.save(bookRequest));
+            return convertBookRequestToBookRequestReponse(save(bookRequest));
         }else {
             throw new BusinessNotFound("Book Request not found");
         }

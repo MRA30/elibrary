@@ -12,6 +12,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+import javax.ws.rs.core.Response;
+
 @Configuration
 @Getter
 public class KeycloakConfig {
@@ -49,6 +51,11 @@ public class KeycloakConfig {
         }
         return keycloak;
     }
+
+    public Response createUser(UserRepresentation userRepresentation) {
+        return keycloak.realm(realm).users().create(userRepresentation);
+    }
+
     public KeycloakBuilder newKeycloakBuilderWithPasswordCredentials(String username, String password) {
         return KeycloakBuilder.builder()
                 .realm(realm)
@@ -71,6 +78,33 @@ public class KeycloakConfig {
                         "    \"email\": \"" + userRepresentation.getEmail() + "\"\n" +
                         "}")
                 .asJson().getBody();
+    }
+
+    public void setEnabled(String id) throws UnirestException {
+        String url = serverUrl + "/admin/realms/" + realm + "/users/" + id;
+        Unirest.put(url)
+                .header("Authorization", "Bearer " + getInstance().tokenManager().getAccessTokenString())
+                .header("Content-Type", "application/json")
+                .body("{\n" +
+                        "   \"enabled\": true\n" +
+                        "}")
+                .asJson();
+    }
+
+    public JsonNode getKeycloakUserByEmail(String email) throws UnirestException {
+        String url = serverUrl + "/admin/realms/" + realm + "/users?email=" + email;
+        return Unirest.get(url)
+                .header("Authorization", "Bearer " + getInstance().tokenManager().getAccessTokenString())
+                .header("Content-Type", "application/json")
+                .asJson().getBody();
+    }
+
+    public void updateKeycloakUserWithoutLogin(UserRepresentation userRepresentation) throws UnirestException {
+        String url = serverUrl + "/admin/realms/" + realm + "/users/" + userRepresentation.getId();
+        Unirest.get(url)
+                .header("Authorization", "Bearer " + getInstance().tokenManager().getAccessTokenString())
+                .header("Content-Type", "application/json")
+                .asObject(UserRepresentation.class).getBody();
     }
 
     public JsonNode getAllUsers() throws UnirestException {
