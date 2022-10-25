@@ -10,6 +10,7 @@ import com.elibrary.model.repos.ImageRepo;
 import com.elibrary.model.repos.UserRepo;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import java.time.Instant;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -79,7 +80,7 @@ public class UserService {
          String username = ((KeycloakAuthenticationToken) principal)
                 .getAccount().getKeycloakSecurityContext()
                 .getToken().getPreferredUsername();
-        return findByUsername(username);
+        return convertUserToUserResponse(findByUsername(username));
       }
 
       public String getIdKeycloak(Principal principal){
@@ -88,9 +89,9 @@ public class UserService {
                   .getToken().getSubject();
       }
 
-      public UserResponse findByUsername(String username){
+      public User findByUsername(String username){
         Optional<User> user = userRepo.findByUsername(username);
-          return user.map(this::convertUserToUserResponse).orElse(null);
+          return user.orElse(null);
       }
 
     public boolean existsByEmail(String email){
@@ -107,14 +108,9 @@ public class UserService {
         return userRepo.existsByNumberIdentity("EM" + numberIdentity);
     }
 
-    public UserResponse findBynoHp(String noHp){
-        User user = userRepo.findBynoHp(noHp);
-        return convertUserToUserResponse(user);
-    }
-
-    public boolean existsByUsernameAndPassword(String username, String password){
-        Optional<User> user = userRepo.findByUsername(username);
-        return user.filter(value -> bCryptPasswordEncoder.matches(password, value.getPassword())).isPresent();
+    public User findByNoHp(String noHp){
+        Optional<User> user = userRepo.findByNoHp(noHp);
+        return user.orElse(null);
     }
 
     public User findByEmailVerificationToken(String token){
@@ -123,6 +119,14 @@ public class UserService {
 
     public User findByResetPasswordToken(String token){
         return userRepo.findByPasswordResetToken(token);
+    }
+
+    public boolean isEnabled(String username) throws UnirestException {
+        return keycloakConfig.getKeycloakUserByUsername(username).getArray().getJSONObject(0).getBoolean("enabled");
+    }
+
+    public boolean isVerified(String username) throws UnirestException {
+        return keycloakConfig.getKeycloakUserByUsername(username).getArray().getJSONObject(0).getBoolean("emailVerified");
     }
 
     public UserResponse convertUserToUserResponse(User user){
@@ -166,7 +170,8 @@ public class UserService {
         return userRepo.findAllEnabled();
     }
 
-    public UserResponse registerEmployee(RegisterEmployeeRequest request) throws UserException {
+    public UserResponse registerEmployee(RegisterEmployeeRequest request)
+        throws UserException, UnirestException {
         if(existsByNumberIdentity(request.getNumberIdentity())){
             throw new UserException("Number Identity already exists");
         }
@@ -213,13 +218,18 @@ public class UserService {
         var response = usersResource.create(userKeycloak);
 
         if(response.getStatus() == 201){
-//            String fullName = user.getFirstName() + " " + user.getLastName();
-//            String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
-//            String link = "http://localhost:8080/activation/" + uuid;
-//            user.setEmailVerificationToken(uuid);
-//            user.setEmailVerificationTokenExpiry(java.sql.Date.valueOf(format.format(new Date().getTime() + 1000 * 60 * 60)));
-//            emailService.sendEmail(request.getEmail(), "Register Employee", "Hello " + fullName + ", your account has been created, please verify your account by clicking the link below, link will expire in 1 hour. " + link);
+            String fullName = user.getFirstName() + " " + user.getLastName();
+            String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+            String link = "http://localhost:8081/public/activation/" + uuid;
+            user.setEmailVerificationToken(uuid);
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.HOUR, 1);
+            user.setEmailVerificationTokenExpiry(calendar.getTime());
+            emailService.sendEmail(request.getEmail(), "Register Employee", "Hello " + fullName + ", your account has been created, please verify your account by clicking the link below, link will expire in 1 hour. " + link);
             save(user);
+            var jsonNode = keycloakConfig.getKeycloakUserByEmail(request.getEmail());
+            String id = jsonNode.getArray().getJSONObject(0).getString("id");
+            keycloakConfig.changeUserRole(id, "employee");
         }
         return convertUserToUserResponse(user);
     }
@@ -249,7 +259,7 @@ public class UserService {
         userKeycloak.setCredentials(Collections.singletonList(createPasswordCredentials(request.getPassword())));
         userKeycloak.setClientRoles(Collections.singletonMap(clientId, Collections.singletonList("member")));
         userKeycloak.setEnabled(false);
-        userKeycloak.setEmailVerified(true);
+        userKeycloak.setEmailVerified(false);
 
         String encodePassword = bCryptPasswordEncoder.encode(request.getPassword());
         request.setPassword(encodePassword);
@@ -270,29 +280,37 @@ public class UserService {
         Response response = keycloakConfig.createUser(userKeycloak);
         System.out.println(response.getStatus());
          if(response.getStatus() == 201){
-//             String fullName = user.getFirstName() + " " + user.getLastName();
-//             String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
-//             String link = "http://localhost:8081/public/activation/" + uuid;
-//             user.setEmailVerificationToken(uuid);
-////             user.setEmailVerificationTokenExpiry(java.sql.Date.valueOf(format.format(new Date().getTime() + 1000 * 60 * 60)));
-//             emailService.sendEmail(request.getEmail(), "Register Employee", "Hello " + fullName + ", your account has been created, please verify your account by clicking the link below, link will expire in 1 hour. " + link);
+             String fullName = user.getFirstName() + " " + user.getLastName();
+             String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+             String link = "http://localhost:8081/public/activation/" + uuid;
+             user.setEmailVerificationToken(uuid);
+             Calendar calendar = Calendar.getInstance();
+             calendar.add(Calendar.HOUR, 1);
+             user.setEmailVerificationTokenExpiry(calendar.getTime());
+             emailService.sendEmail(request.getEmail(), "Register Member", "Hello " + fullName + ", your account has been created, please verify your account by clicking the link below, link will expire in 1 hour. " + link);
              save(user);
          }
         return convertUserToUserResponse(user);
     }
 
     public UserResponse updateUser(String idKeycloak, long id, UpdateProfileRequest request) throws UnirestException, UserException {
-        long idEmail = findByEmail(request.getEmail()).getId();
-        long idUsername = findByUsername(request.getUsername()).getId();
-        long idNoHp = findBynoHp(request.getNoHp()).getId();
-        if(existsByEmail(request.getEmail()) && idEmail != id){
-            throw new UserException("Email already exists");
+        User userEmail = findByEmail(request.getEmail());
+        User userUsername = findByUsername(request.getUsername());
+        User userNoHp = findByNoHp(request.getNoHp());
+        if(existsByEmail(request.getEmail())){
+            if(userEmail.getId() != id) {
+                throw new UserException("Email already exists");
+            }
         }
-        if(existByUsername(request.getUsername()) && idUsername != id){
-            throw new UserException("Username already exists");
+        if(existByUsername(request.getUsername())){
+            if(userUsername.getId() != id) {
+                throw new UserException("Username already exists");
+            }
         }
-        if(existsBynoHp(request.getNoHp()) && idNoHp != id){
-            throw new UserException("No Hp already exists");
+        if(existsBynoHp(request.getNoHp())){
+            if(userNoHp.getId() != id) {
+                throw new UserException("No Hp already exists");
+            }
         }
         UserRepresentation userRepresentation = new UserRepresentation();
         userRepresentation.setId(idKeycloak);
@@ -315,12 +333,21 @@ public class UserService {
         return convertUserToUserResponse(save(user));
     }
 
-    public UserResponse updatePassword(long id, UpdatePasswordRequest request){
-            User user = findById(id);
-            String encodePassword = bCryptPasswordEncoder.encode(request.getNewPassword());
-            user.setPassword(encodePassword);
-            userRepo.save(user);
-            return convertUserToUserResponse(user);
+    public void updatePassword(ChangePasswordRequest request, Principal principal)
+        throws UnirestException, UserException {
+        User user = findByEmail(getProfile(principal).getEmail());
+        if(!bCryptPasswordEncoder.matches(request.getOldPassword(), user.getPassword())){
+            throw new UserException("Old password is wrong");
+        }
+        if(bCryptPasswordEncoder.matches(request.getNewPassword(), user.getPassword())){
+            throw new UserException("New password cannot be the same as old password");
+        }
+        String encodePassword = bCryptPasswordEncoder.encode(request.getNewPassword());
+        user.setPassword(encodePassword);
+        userRepo.save(user);
+        JsonNode jsonNode =  keycloakConfig.getKeycloakUserByEmail(user.getEmail());
+        String idUser = jsonNode.getArray().getJSONObject(0).getString("id");
+        keycloakConfig.changePassword(idUser, request.getNewPassword());
     }
 
     public Page<UserResponse> findAllUsers(String search, String userRole, int page, int size, String sortBy, String direction){
@@ -349,7 +376,7 @@ public class UserService {
         return passwordCredentials;
     }
 
-    public UserResponse forgotPassword(ResetPasswordEmailRequest request) throws UserException {
+    public void forgotPassword(EmailRequest request) throws UserException {
         User user = findByEmail(request.getEmail());
         if(user == null){
             throw new UserException("Email not found");
@@ -357,24 +384,27 @@ public class UserService {
         // generated UUID 30 character
         String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
         user.setPasswordResetToken(uuid);
-        user.setEmailVerificationTokenExpiry(java.sql.Date.valueOf(format.format(new Date().getTime() + 1000 * 60 * 60)));
-
-        return convertUserToUserResponse(save(user));
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.HOUR, 1);
+        user.setPasswordResetTokenExpiry(calendar.getTime());
     }
 
-    public UserResponse resetPassword(ResetPasswordRequest request, String token) throws UserException {
+    public void resetPassword(ResetPasswordRequest request, String token)
+        throws UserException, UnirestException {
         User user = findByResetPasswordToken(token);
         if(user == null){
             throw new UserException("Token not valid");
         }
-        if(user.getEmailVerificationTokenExpiry().before(new Date())){
+        if(Date.from(Instant.now()).after(user.getEmailVerificationTokenExpiry())){
             throw new UserException("Token expired");
         }
         String encodePassword = bCryptPasswordEncoder.encode(request.getPassword());
         user.setPassword(encodePassword);
+        JsonNode jsonNode =  keycloakConfig.getKeycloakUserByEmail(user.getEmail());
+        String id = jsonNode.getArray().getJSONObject(0).getString("id");
+        keycloakConfig.changePassword(id, request.getPassword());
         user.setPasswordResetToken(null);
-        user.setEmailVerificationTokenExpiry(null);
-        return convertUserToUserResponse(save(user));
+        user.setPasswordResetTokenExpiry(null);
     }
 
     public void verifyEmail(String token) throws UserException, UnirestException {
@@ -382,13 +412,40 @@ public class UserService {
         if(user == null){
             throw new UserException("Token not valid");
         }
-//        if(user.getEmailVerificationTokenExpiry().before(new Date())){
-//            throw new UserException("Token expired");
-//        }
+        if(Date.from(Instant.now()).after(user.getEmailVerificationTokenExpiry())){
+            throw new UserException("Token expired");
+        }
         JsonNode jsonNode =  keycloakConfig.getKeycloakUserByEmail(user.getEmail());
         String id = jsonNode.getArray().getJSONObject(0).getString("id");
-        keycloakConfig.setEnabled(id);
+        UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setId(id);
+        userRepresentation.setEnabled(true);
+        userRepresentation.setEmailVerified(true);
+        keycloakConfig.setEnabledAndVerified(userRepresentation);
         user.setEnabled(true);
+        user.setEmailVerificationToken(null);
+        user.setEmailVerificationTokenExpiry(null);
         convertUserToUserResponse(save(user));
+    }
+
+    public void resendVerificationToken(EmailRequest request) throws UserException {
+        User user = findByEmail(request.getEmail());
+        if(user == null){
+            throw new UserException("Email not found");
+        }
+        if(user.isEnabled()){
+            throw new UserException("Email already verified");
+        }
+        if(user.getEmailVerificationToken() == null){
+            throw new UserException("You can't resend verification token");
+        }
+        String fullName = user.getFirstName() + " " + user.getLastName();
+        String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        String link = "http://localhost:8081/public/activation/" + uuid;
+        user.setEmailVerificationToken(uuid);
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.HOUR, 1);
+        user.setEmailVerificationTokenExpiry(calendar.getTime());
+        emailService.sendEmail(user.getEmail(), "Register Employee", "Hello " + fullName + ", your account has been created, please verify your account by clicking the link below, link will expire in 1 hour. " + link);
     }
 }

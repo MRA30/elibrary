@@ -16,7 +16,7 @@ public interface UserRepo extends JpaRepository<User, Long>, JpaSpecificationExe
     Optional<User> findByUsername(String username);
 
     User findByEmail(String email);
-    User findBynoHp(String noHp);
+    Optional<User> findByNoHp(String noHp);
 
     User findByEmailVerificationToken(String token);
 

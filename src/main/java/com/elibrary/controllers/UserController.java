@@ -4,9 +4,12 @@ import com.elibrary.Constans;
 import com.elibrary.Exception.BusinessNotFound;
 import com.elibrary.Exception.UserException;
 import com.elibrary.config.KeycloakConfig;
+import com.elibrary.dto.request.ChangePasswordRequest;
+import com.elibrary.dto.request.EmailRequest;
 import com.elibrary.dto.request.LoginRequest;
 import com.elibrary.dto.request.RegisterEmployeeRequest;
 import com.elibrary.dto.request.RegisterMemberRequest;
+import com.elibrary.dto.request.ResetPasswordRequest;
 import com.elibrary.dto.request.UpdateProfileRequest;
 import com.elibrary.dto.response.ResponseData;
 import com.elibrary.dto.response.UserResponse;
@@ -41,9 +44,10 @@ public class UserController {
         this.keycloakConfig = keycloakConfig;
     }
 
-    @PostMapping("/employee/register")
-    @RolesAllowed("employee")
-    public ResponseEntity<ResponseData<UserResponse>> registerEmployee(@Valid @RequestBody RegisterEmployeeRequest registerRequest) throws UserException {
+    @PostMapping("/register-employee")
+//    @RolesAllowed("employee")
+    public ResponseEntity<ResponseData<UserResponse>> registerEmployee(@Valid @RequestBody RegisterEmployeeRequest registerRequest)
+        throws UserException, UnirestException {
         Map<String, String> messagesList = new HashMap<>();
             UserResponse userResponse = userService.registerEmployee(registerRequest);
             messagesList.put(Constans.MESSAGE, "Register Success");
@@ -87,36 +91,6 @@ public class UserController {
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, userResponses));
     }
 
-    @PostMapping("/public/register")
-    public ResponseEntity<ResponseData<UserResponse>> registerMember(@Valid @RequestBody RegisterMemberRequest registerRequest) throws UserException {
-        Map<String, String> messagesList = new HashMap<>();
-            UserResponse userResponse = userService.registerMember(registerRequest);
-            messagesList.put(Constans.MESSAGE, "Register Success");
-            return ResponseEntity.ok(new ResponseData<>(true, messagesList, userResponse));
-    }
-
-    @PostMapping("/public/login")
-    public ResponseEntity<ResponseData<UserResponse>> login(@Valid @RequestBody LoginRequest loginRequest,
-                                                             HttpServletResponse response) throws UnirestException {
-        Map<String, String> messagesList = new HashMap<>();
-        if(!userService.existsByUsernameAndPassword(loginRequest.getUsername(), loginRequest.getPassword())){
-            messagesList.put(Constans.MESSAGE, "Username or Password is Wrong");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
-        }
-        Keycloak keycloak = keycloakConfig.newKeycloakBuilderWithPasswordCredentials(loginRequest.getUsername(), loginRequest.getPassword()).build();
-        System.out.println(keycloak.tokenManager().getAccessTokenString());
-        AccessTokenResponse accessTokenResponse = keycloak.tokenManager().getAccessToken();
-        Cookie newCookie = new Cookie(Constans.ACCESS_TOKEN, accessTokenResponse.getToken());
-        newCookie.setHttpOnly(true);
-        newCookie.setPath("/");
-        newCookie.setSecure(true);
-        newCookie.setMaxAge((int) accessTokenResponse.getExpiresIn());
-        response.addCookie(newCookie);
-
-        messagesList.put(Constans.MESSAGE, "Login Success");
-        return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
-    }
-
     @GetMapping("/profile")
     @RolesAllowed("member")
     public ResponseEntity<ResponseData<UserResponse>> profileUser(Principal principal) {
@@ -136,10 +110,56 @@ public class UserController {
     public ResponseEntity<ResponseData<UserResponse>> updateUser(Principal principal, @Valid @RequestBody UpdateProfileRequest updateProfileRequest) throws UnirestException, UserException {
         UserResponse userResponse = userService.getProfile(principal);
         Map<String, String> messagesList = new HashMap<>();
-            String idKeycloak = userService.getIdKeycloak(principal);
-            UserResponse update = userService.updateUser(idKeycloak,userResponse.getId(), updateProfileRequest);
-            messagesList.put(Constans.MESSAGE, "User Updated");
-            return ResponseEntity.ok(new ResponseData<>(true, messagesList, update));
+        String idKeycloak = userService.getIdKeycloak(principal);
+        UserResponse update = userService.updateUser(idKeycloak,userResponse.getId(), updateProfileRequest);
+        messagesList.put(Constans.MESSAGE, "User Updated");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, update));
+    }
+
+    @PutMapping("/update/change-password")
+    @RolesAllowed("member")
+    public ResponseEntity<ResponseData<UserResponse>> changePassword(Principal principal, @Valid @RequestBody ChangePasswordRequest request) throws UnirestException, UserException {
+        Map<String, String> messagesList = new HashMap<>();
+        userService.updatePassword(request, principal);
+        messagesList.put(Constans.MESSAGE, "Password Updated");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
+    }
+
+    @PostMapping("/public/register")
+    public ResponseEntity<ResponseData<UserResponse>> registerMember(@Valid @RequestBody RegisterMemberRequest registerRequest) throws UserException {
+        Map<String, String> messagesList = new HashMap<>();
+        UserResponse userResponse = userService.registerMember(registerRequest);
+        messagesList.put(Constans.MESSAGE, "Register Success");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, userResponse));
+    }
+
+    @PostMapping("/public/login")
+    public ResponseEntity<ResponseData<UserResponse>> login(@Valid @RequestBody LoginRequest loginRequest,
+        HttpServletResponse response) throws UnirestException {
+        Map<String, String> messagesList = new HashMap<>();
+        if(!keycloakConfig.checkUser(loginRequest.getUsername(), loginRequest.getPassword())){
+            messagesList.put(Constans.MESSAGE, "Username or Password is Wrong");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
+        }
+        if(!userService.isEnabled(loginRequest.getUsername())){
+            messagesList.put(Constans.MESSAGE, "User is disabled");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
+        }
+        if(!userService.isVerified(loginRequest.getUsername())){
+            messagesList.put(Constans.MESSAGE, "User is not verified");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseData<>(false, messagesList, null));
+        }
+        Keycloak keycloak = keycloakConfig.newKeycloakBuilderWithPasswordCredentials(loginRequest.getUsername(), loginRequest.getPassword()).build();
+        AccessTokenResponse accessTokenResponse = keycloak.tokenManager().getAccessToken();
+        Cookie newCookie = new Cookie(Constans.ACCESS_TOKEN, accessTokenResponse.getToken());
+        newCookie.setHttpOnly(true);
+        newCookie.setPath("/");
+        newCookie.setSecure(true);
+        newCookie.setMaxAge((int) accessTokenResponse.getExpiresIn());
+        response.addCookie(newCookie);
+
+        messagesList.put(Constans.MESSAGE, "Login Success");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
     }
 
     @PostMapping("/public/activation/{token}")
@@ -147,6 +167,30 @@ public class UserController {
         Map<String, String> messagesList = new HashMap<>();
         userService.verifyEmail(token);
         messagesList.put(Constans.MESSAGE, "Verification Success");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
+    }
+
+    @PostMapping("/public/forgot-password")
+    public ResponseEntity<ResponseData<UserResponse>> forgotPassword(@Valid @RequestBody EmailRequest emailRequest) throws UserException, UnirestException {
+        Map<String, String> messagesList = new HashMap<>();
+        userService.forgotPassword(emailRequest);
+        messagesList.put(Constans.MESSAGE, "Forgot Password Success, Please Check Your Email");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
+    }
+
+    @PostMapping("/public/reset-password/{token}")
+    public ResponseEntity<ResponseData<UserResponse>> resetPassword(@PathVariable("token") String token, @Valid @RequestBody ResetPasswordRequest resetPasswordRequest) throws UserException, UnirestException {
+        Map<String, String> messagesList = new HashMap<>();
+        userService.resetPassword(resetPasswordRequest, token);
+        messagesList.put(Constans.MESSAGE, "Reset Password Success, Please Login With New Password");
+        return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
+    }
+
+    @PostMapping("/public/resend-verification")
+    public ResponseEntity<ResponseData<UserResponse>> resendVerification(@Valid @RequestBody EmailRequest request) throws UserException, UnirestException {
+        Map<String, String> messagesList = new HashMap<>();
+        userService.resendVerificationToken(request);
+        messagesList.put(Constans.MESSAGE, "Resend Verification Success, Please Check Your Email");
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
     }
 

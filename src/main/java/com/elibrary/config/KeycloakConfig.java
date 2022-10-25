@@ -30,6 +30,8 @@ public class KeycloakConfig {
     @Value("${keycloak.credentials.secret}")
     public String clientSecret;
 
+    private final String clientKeycloakId = "39550ad5-fd4f-44ee-949e-4b7e5582c690";
+
     public KeycloakConfig() {
     }
 
@@ -80,15 +82,32 @@ public class KeycloakConfig {
                 .asJson().getBody();
     }
 
-    public void setEnabled(String id) throws UnirestException {
+    // check username and password exists in keycloak
+    public boolean checkUser(String username, String password) {
+        try {
+            Keycloak keycloak = newKeycloakBuilderWithPasswordCredentials(username, password).build();
+            keycloak.tokenManager().getAccessToken();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public void setEnabled(String id, String isEnabled) throws UnirestException {
         String url = serverUrl + "/admin/realms/" + realm + "/users/" + id;
         Unirest.put(url)
                 .header("Authorization", "Bearer " + getInstance().tokenManager().getAccessTokenString())
                 .header("Content-Type", "application/json")
                 .body("{\n" +
-                        "   \"enabled\": true\n" +
+                        "   \"enabled\":" + isEnabled + "\n" +
                         "}")
                 .asJson();
+    }
+
+    public void setEnabledAndVerified(UserRepresentation user) {
+        user.setEnabled(true);
+        user.setEmailVerified(true);
+        keycloak.realm(realm).users().get(user.getId()).update(user);
     }
 
     public JsonNode getKeycloakUserByEmail(String email) throws UnirestException {
@@ -99,12 +118,71 @@ public class KeycloakConfig {
                 .asJson().getBody();
     }
 
-    public void updateKeycloakUserWithoutLogin(UserRepresentation userRepresentation) throws UnirestException {
-        String url = serverUrl + "/admin/realms/" + realm + "/users/" + userRepresentation.getId();
-        Unirest.get(url)
+    public JsonNode getKeycloakUserByUsername(String username) throws UnirestException {
+        String url = serverUrl + "/admin/realms/" + realm + "/users?username=" + username;
+        return Unirest.get(url)
+            .header("Authorization", "Bearer " + getInstance().tokenManager().getAccessTokenString())
+            .header("Content-Type", "application/json")
+            .asJson().getBody();
+    }
+
+    // change password
+    public void changePassword(String id, String password) throws UnirestException {
+        String url = serverUrl + "/admin/realms/" + realm + "/users/" + id + "/reset-password";
+        Unirest.put(url)
+            .header("Authorization",
+                "Bearer " + getInstance().tokenManager().getAccessTokenString())
+            .header("Content-Type", "application/json")
+            .body("{\n" +
+                "    \"type\": \"password\",\n" +
+                "    \"temporary\": false,\n" +
+                "    \"value\": \"" + password + "\"\n" +
+                "}")
+            .asJson().getBody();
+    }
+
+    // get role list
+    public JsonNode getRoleList() throws UnirestException {
+        String url = serverUrl + "/admin/realms/" + realm + "/clients/" + clientKeycloakId + "/roles";
+        return Unirest.get(url)
                 .header("Authorization", "Bearer " + getInstance().tokenManager().getAccessTokenString())
                 .header("Content-Type", "application/json")
-                .asObject(UserRepresentation.class).getBody();
+                .asJson().getBody();
+    }
+    public void changeUserRole(String userId, String roleName) throws UnirestException {
+        JsonNode roleList = getRoleList();
+
+        String roleId = "";
+        for (int i = 0; i < roleList.getArray().length(); i++) {
+            if (roleList.getArray().getJSONObject(i).get("name").toString().equals(roleName)) {
+                roleId = roleList.getArray().getJSONObject(i).get("id").toString();
+            }
+        }
+
+        // find client role
+        String url = serverUrl + "/admin/realms/" + realm + "/users/" +
+            userId + "/role-mappings/clients/" + clientKeycloakId;
+        Unirest.post(url)
+            .header("Authorization", "Bearer " + getInstance().tokenManager().getAccessTokenString())
+            .header("Content-Type", "application/json")
+            .body("[{\"id\": \"" + roleId + "\","
+                + "\"name\": \"" + roleName + "\", "
+                + "\"scopeParamRequired\": false, "
+                + "\"composite\": false,"
+                + " \"clientRole\": true, "
+                + "\"containerId\": \"ec9cff5f-22a8-4664-83b9-ee126911871b\"}]")
+            .asJson()
+            .getBody();
+    }
+
+    // delete session
+    public void deleteSession(String userId) throws UnirestException {
+        String url = serverUrl + "/admin/realms/" + realm + "/users/" + userId + "/logout";
+        Unirest.post(url)
+            .header("Authorization", "Bearer " + getInstance().tokenManager().getAccessTokenString())
+            .header("Content-Type", "application/json")
+            .asJson()
+            .getBody();
     }
 
     public JsonNode getAllUsers() throws UnirestException {

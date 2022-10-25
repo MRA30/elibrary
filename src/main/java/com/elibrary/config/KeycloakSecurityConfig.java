@@ -52,7 +52,7 @@ public class KeycloakSecurityConfig extends KeycloakWebSecurityConfigurerAdapter
     protected void configure(HttpSecurity http) throws Exception {
         super.configure(http);
         http.csrf().disable().authorizeRequests()
-                .antMatchers("/users/public/**", "/books/public/**")
+                .antMatchers("/users/public/**", "/books/public/**", "/users/register-employee")
                 .permitAll()
                 .and().exceptionHandling().accessDeniedHandler(new CustomAccessDeniedHandler())
                 .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
