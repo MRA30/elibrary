@@ -7,6 +7,7 @@ import com.elibrary.model.entity.Book;
 import com.elibrary.model.entity.Image;
 import com.elibrary.model.entity.User;
 import com.elibrary.model.repos.ImageRepo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,19 +20,17 @@ import java.util.UUID;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ImageService {
 
-    @Autowired
-    private ImageRepo imageRepo;
+    private final ImageRepo imageRepo;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private BookService bookService;
+    private final BookService bookService;
 
-    @Autowired
-    private AmazonS3Service amazonS3Service;
+
+    private final AmazonS3Service amazonS3Service;
 
     public void uploadImageUser(MultipartFile image, Long id) throws IOException {
         if(image.isEmpty()){

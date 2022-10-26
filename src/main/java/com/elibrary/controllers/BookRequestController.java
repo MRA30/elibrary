@@ -8,6 +8,7 @@ import com.elibrary.dto.response.BookRequestResponse;
 import com.elibrary.dto.response.ResponseData;
 import com.elibrary.services.BookRequestService;
 import com.elibrary.services.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -21,15 +22,14 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/bookrequests")
+@RequiredArgsConstructor
 public class BookRequestController {
 
-    @Autowired
-    private BookRequestService bookRequestService;
+    private final BookRequestService bookRequestService;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
     
-    @PostMapping("/add")
+    @PostMapping
     @RolesAllowed("member")
     public ResponseEntity<ResponseData<BookRequestResponse>> createBookRequest(@Valid @RequestBody BookRequestRequest request, Principal principal){
         Map<String, String> messagesList = new HashMap<>();
@@ -38,7 +38,7 @@ public class BookRequestController {
         messagesList.put(Constans.MESSAGE, "Book Request Created Successfully");
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequestResponse));
     }
-    @PutMapping("/employee/update/{id}")
+    @PutMapping("/{id}")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<BookRequestResponse>> updateBookRequest(@PathVariable("id") long id,@Valid @RequestBody BookRequestRequest request) throws BusinessNotFound {
         Map<String, String> messagesList = new HashMap<>();
@@ -47,7 +47,7 @@ public class BookRequestController {
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookRequestResponse));
     }
 
-     @GetMapping("/employee")
+     @GetMapping
      @RolesAllowed("employee")
      public ResponseEntity<ResponseData<Page<BookRequestResponse>>> getAllBookRequests(@RequestParam(defaultValue = "") String search,
                                                                                        @RequestParam(defaultValue = "false") boolean available,
@@ -66,7 +66,7 @@ public class BookRequestController {
         }
      }
 
-    @DeleteMapping("/employee/{id}")
+    @DeleteMapping("/{id}")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<String>> deleteBookRequest(@PathVariable("id") long id) throws BusinessNotFound {
         Map<String, String> messagesList = new HashMap<>();
@@ -76,7 +76,7 @@ public class BookRequestController {
     }
 
 
-     @GetMapping("/employee/{id}")
+     @GetMapping("/{id}")
      @RolesAllowed("employee")
      public ResponseEntity<ResponseData<BookRequestResponse>> findById(@PathVariable("id")long id) throws BusinessNotFound {
          Map<String, String> messagesList = new HashMap<>();

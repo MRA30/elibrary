@@ -15,6 +15,7 @@ import com.elibrary.dto.response.ResponseData;
 import com.elibrary.dto.response.UserResponse;
 import com.elibrary.services.UserService;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import lombok.RequiredArgsConstructor;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.AccessTokenResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,15 +35,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
     private final KeycloakConfig keycloakConfig;
-
-    public UserController(KeycloakConfig keycloakConfig) {
-        this.keycloakConfig = keycloakConfig;
-    }
 
     @PostMapping("/register-employee")
 //    @RolesAllowed("employee")
@@ -54,7 +51,7 @@ public class UserController {
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, userResponse));
     }
 
-    @GetMapping("/employee")
+    @GetMapping
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<Page<UserResponse>>> getAllUsers(@RequestParam(defaultValue = "") String search,
                                                                         @RequestParam(defaultValue = "member") String userRole,
@@ -73,7 +70,7 @@ public class UserController {
         }
     }
 
-    @GetMapping("/employee/{id}")
+    @GetMapping("/{id}")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<UserResponse>> getDetailsUser(@PathVariable("id") Long id) throws BusinessNotFound {
         Map<String, String> messagesList = new HashMap<>();
@@ -82,7 +79,7 @@ public class UserController {
             return ResponseEntity.ok(new ResponseData<>(true, messagesList, userResponse));
     }
 
-    @GetMapping("/employee/allmemeberwithoutpaging")
+    @GetMapping("/all-user-without-paging")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<List<UserResponse>>> getAllMemberWithoutPaging(@RequestParam(defaultValue = "") String search){
         Map<String, String> messagesList = new HashMap<>();

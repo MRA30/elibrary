@@ -10,6 +10,7 @@ import com.elibrary.model.repos.BookRepo;
 import com.elibrary.model.repos.BorrowRepo;
 import com.elibrary.model.repos.ImageRepo;
 import com.elibrary.model.specification.BookSpecification;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -21,22 +22,18 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class BookService {
 
-    @Autowired
-    private BookRepo bookRepo;
+    private final BookRepo bookRepo;
 
-    @Autowired
-    private BorrowRepo borrowRepo;
+    private final BorrowRepo borrowRepo;
 
-    @Autowired
-    private CategoryService categoryService;
+    private final CategoryService categoryService;
 
-    @Autowired
-    private BookSpecification bookSpecification;
+    private final BookSpecification bookSpecification;
 
-    @Autowired
-    private ImageRepo imageRepo;
+    private final ImageRepo imageRepo;
 
     public List<String> findAllImage(String type, long id){
         return imageRepo.findAllImageByTypeAndId(type, id);
@@ -81,7 +78,8 @@ public class BookService {
             book.getPublisher(),
             book.getYearPublication(),
             book.getQuantity(),
-            categoryService.convertCategoryToResponse(book.getCategory()),
+            book.getCategory().getId(),
+            book.getCategory().getCategory(),
             book.getSynopsis(),
             findAllImage("book", book.getId())
         );
@@ -171,7 +169,8 @@ public class BookService {
                                 book.getPublisher(),
                                 book.getYearPublication(),
                                 book.getQuantity() - borrowRepo.countBookBorrow(book.getId()),
-                                categoryService.convertCategoryToResponse(book.getCategory()),
+                                book.getCategory().getId(),
+                                book.getCategory().getCategory(),
                                 book.getSynopsis(),
                                 findAllImage("book", book.getId())))
                                         .collect(Collectors.toList()), pageable, totalElements);
@@ -194,7 +193,8 @@ public class BookService {
                                     book.getPublisher(),
                                     book.getYearPublication(),
                                     book.getQuantity() - borrowRepo.countBookBorrow(book.getId()),
-                                    categoryService.convertCategoryToResponse(book.getCategory()),
+                                    book.getCategory().getId(),
+                                    book.getCategory().getCategory(),
                                     book.getSynopsis(),
                                     findAllImage("book", book.getId())))
                     .collect(Collectors.toList()), pageable, totalElements);
@@ -213,7 +213,8 @@ public class BookService {
                     book.get().getPublisher(),
                     book.get().getYearPublication(),
                     book.get().getQuantity() - borrowRepo.countBookBorrow(book.get().getId()),
-                    categoryService.convertCategoryToResponse(book.get().getCategory()),
+                    book.get().getCategory().getId(),
+                    book.get().getCategory().getCategory(),
                     book.get().getSynopsis(),
                     findAllImage("book", book.get().getId())
             );

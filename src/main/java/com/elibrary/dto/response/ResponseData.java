@@ -14,6 +14,8 @@ import lombok.NoArgsConstructor;
 public class ResponseData<T> {
 
     private boolean status;
+
     private Map<String, String> message;
+
     private T payload;
 }

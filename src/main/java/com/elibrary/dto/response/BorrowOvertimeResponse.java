@@ -12,12 +12,20 @@ import java.util.Date;
 public class BorrowOvertimeResponse {
 
     private long id;
+
     private long bookId;
+
     private String bookTitle;
+
     private long userId;
+
     private String fullName;
-    private Date borrowDate;
-    private Date returnDate;
+
+    private String borrowDate;
+
+    private String returnDate;
+
     private int daysOvertime;
+
     private String description;
 }

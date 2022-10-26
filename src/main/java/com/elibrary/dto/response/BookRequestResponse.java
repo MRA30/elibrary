@@ -1,5 +1,6 @@
 package com.elibrary.dto.response;
 
+import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,11 +9,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BookRequestResponse {
-    
+
     private Long id;
+
     private Long userId;
+
     private String name;
+
     private String title;
+
     private boolean isAvailable;
+
     private String description;
 }

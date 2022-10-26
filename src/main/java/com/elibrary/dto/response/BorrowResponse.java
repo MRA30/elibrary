@@ -12,13 +12,22 @@ import java.util.Date;
 public class BorrowResponse {
     
     private Long id;
+
     private Long bookId;
+
     private String bookTitle;
+
     private Long userId;
+
     private String fullName;
-    private Date borrowDate;
-    private Date returnDate;
+
+    private String borrowDate;
+
+    private String returnDate;
+
     private boolean isReturned;
+
     private double penalty;
+
     private String description;
 }

@@ -13,6 +13,9 @@ import com.elibrary.dto.response.ResponseData;
 import com.elibrary.services.BorrowService;
 import com.elibrary.services.UserService;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -26,17 +29,16 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/borrows")
+@RequiredArgsConstructor
 public class BorrowController {
-    @Autowired
-    private BorrowService borrowService;
 
-    @Autowired
-    private UserService userService;
+    private final BorrowService borrowService;
 
-    @Autowired
-    private OneSignalConfig oneSignalConfig;
+    private final UserService userService;
 
-    @PostMapping("/employee/add")
+    private final OneSignalConfig oneSignalConfig;
+
+    @PostMapping
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<List<BorrowResponse>>> addBorrow(@Valid @RequestBody List<BorrowRequestAdd> request) throws UnirestException, BorrowException {
         Map<String, String> messagesList = new HashMap<>();
@@ -50,13 +52,16 @@ public class BorrowController {
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, borrowResponse));
     }
 
-    @PutMapping("/employee/update/{id}")
+    @PutMapping("/{id}")
     @RolesAllowed("employee")
-    public ResponseEntity<ResponseData<BorrowResponse>> updateBorrow(@PathVariable("id") long id, @Valid @RequestBody BorrowRequestUpdate request) throws UnirestException, BusinessNotFound {
+    public ResponseEntity<ResponseData<BorrowResponse>> updateBorrow(@PathVariable("id") long id, @Valid @RequestBody BorrowRequestUpdate request)
+        throws UnirestException, BusinessNotFound, ParseException {
         Map<String, String> messagesList = new HashMap<>();
         BorrowResponse borrowResponse = borrowService.updateBorrow(id, request);
         if (request.isReturned()) {
-            long diff = borrowService.daydiff(borrowResponse.getBorrowDate());
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+            Date borrowDate = formatter.parse(borrowResponse.getBorrowDate());
+            long diff = borrowService.daydiff(borrowDate);
             messagesList.put(Constans.MESSAGE, borrowService.fineOrPenalty(diff, request.getPenalty()));
             oneSignalConfig.pushNotifyBorrow(userService.findById(borrowResponse.getUserId()).getEmail(), borrowResponse.getFullName()," You have returned a book " + borrowResponse.getBookTitle() + " and " + messagesList.get(Constans.MESSAGE));
         } else {
@@ -65,7 +70,7 @@ public class BorrowController {
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, borrowResponse));
     }
 
-    @GetMapping("/employee")
+    @GetMapping
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<Page<BorrowResponse>>> getAllBorrows(@RequestParam(defaultValue = "") String search,
                                                                             @RequestParam(defaultValue = "false") boolean returned,
@@ -84,7 +89,7 @@ public class BorrowController {
         }
     }
 
-    @GetMapping("/employee/{id}")
+    @GetMapping("/{id}")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<BorrowResponse>> getBorrowById(@PathVariable("id") long id) throws BusinessNotFound {
         Map<String, String> messagesList = new HashMap<>();
@@ -93,7 +98,7 @@ public class BorrowController {
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, borrowResponse));
     }
 
-    @GetMapping("/employee/borrowsovertime")
+    @GetMapping("/borrows-overtime")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<Page<BorrowOvertimeResponse>>> getBorrowsOverTime(@RequestParam(defaultValue = "0") int page,
                                                                                          @RequestParam(defaultValue = "10") int size,

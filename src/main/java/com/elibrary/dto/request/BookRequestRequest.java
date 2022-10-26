@@ -13,7 +13,9 @@ public class BookRequestRequest {
     private String title;
 
     private Long userId;
+
     private boolean isAvailable;
+
     private String description;
     
 }

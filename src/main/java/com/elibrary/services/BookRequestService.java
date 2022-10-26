@@ -7,6 +7,7 @@ import com.elibrary.dto.response.BookRequestResponse;
 import com.elibrary.model.entity.BookRequest;
 import com.elibrary.model.entity.User;
 import com.elibrary.model.repos.BookRequestRepo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -17,13 +18,12 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class BookRequestService {
     
-    @Autowired
-    private BookRequestRepo bookRequestRepo;
+    private final BookRequestRepo bookRequestRepo;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
     public BookRequest save(BookRequest bookRequest) {
         if(bookRequest.getId() != null){

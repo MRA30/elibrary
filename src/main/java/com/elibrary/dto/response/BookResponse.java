@@ -13,12 +13,22 @@ import java.util.List;
 public class BookResponse {
     
     private Long id;
+
     private String title;
+
     private String author;
+
     private String publisher;
+
     private String yearPublication;
+
     private Integer quantity;
-    private CategoryResponse categoryResponse;
+
+    private long idCategory;
+
+    private String category;
+
     private String synopsis;
+
     private List<String> images;
 }

@@ -14,6 +14,7 @@ import com.elibrary.model.entity.Borrow;
 import com.elibrary.model.entity.User;
 import com.elibrary.model.repos.BorrowRepo;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import lombok.RequiredArgsConstructor;
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,22 +33,18 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class BorrowService {
 
+    private final BorrowRepo borrowRepo;
 
-    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+    private final BookService bookService;
 
-    @Autowired
-    private BorrowRepo borrowRepo;
+    private final UserService userService;
 
-    @Autowired
-    private BookService bookService;
+    private final OneSignalConfig oneSignalConfig;
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private OneSignalConfig oneSignalConfig;
+    SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
 
     private Borrow save(Borrow borrow) {
         if(borrow.getId() != null){
@@ -137,8 +134,8 @@ public class BorrowService {
             borrow.getBook().getTitle(),
             borrow.getUser().getId(),
             borrow.getUser().getFirstName() + " " + borrow.getUser().getLastName(),
-            borrow.getBorrowDate(),
-            borrow.getReturnDate(),
+            borrow.getBorrowDate().toString(),
+            borrow.getReturnDate().toString(),
             borrow.isReturned(),
             borrow.getPenalty(),
             borrow.getDescription()
@@ -171,8 +168,8 @@ public class BorrowService {
             borrow.getBook().getTitle(),
             borrow.getUser().getId(),
             borrow.getUser().getFirstName() + " " + borrow.getUser().getLastName(),
-            borrow.getBorrowDate(),
-            borrow.getReturnDate(),
+            borrow.getBorrowDate().toString(),
+            borrow.getReturnDate().toString(),
             days_difference,
             borrow.getDescription()
         );

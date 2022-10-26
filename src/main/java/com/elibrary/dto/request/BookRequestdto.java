@@ -1,6 +1,7 @@
 package com.elibrary.dto.request;
 
 import com.elibrary.validators.CategoryIdValidation;
+import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,5 +34,6 @@ public class BookRequestdto {
     @NotNull(message = "category must not be empty")
     private Long category;
 
+    @NotEmpty(message = "synopsis must not be empty")
     private String synopsis;
 }

@@ -1,7 +1,5 @@
 package com.elibrary.utils;
 
-import com.elibrary.config.KeycloakSecurityConfig;
-import com.elibrary.dto.response.UserResponse;
 import com.elibrary.model.entity.User;
 import com.elibrary.services.UserService;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
@@ -18,11 +16,8 @@ public class AuditorAwareImpl implements AuditorAware<String> {
 
     @Override
     public Optional<String> getCurrentAuditor() {
-        User currentUser = userService.findByEmail(((KeycloakAuthenticationToken) SecurityContextHolder.getContext().getAuthentication()).getAccount().getKeycloakSecurityContext().getToken().getEmail());
-        if(currentUser != null) {
-            return Optional.of(currentUser.getEmail());
-        }else {
-            return Optional.of("system");
-        }
+        return Optional.ofNullable(KeycloakAuthenticationToken.class.cast(
+                SecurityContextHolder.getContext().getAuthentication()).getAccount()
+            .getKeycloakSecurityContext().getToken().getPreferredUsername());
     }
 }

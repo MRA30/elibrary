@@ -53,16 +53,6 @@ public class User {
 
     private Date passwordResetTokenExpiry;
 
-//    @OneToMany(targetEntity = Borrow.class, cascade = CascadeType.ALL)
-//    @JoinColumn(name = "user_id", referencedColumnName = "id")
-//    @ToString.Exclude
-//    private List<Borrow> borrows;
-//
-//    @OneToMany(targetEntity = BookRequest.class, cascade = CascadeType.ALL)
-//    @JoinColumn(name = "user_id", referencedColumnName = "id")
-//    @ToString.Exclude
-//    private List<BookRequest> bookRequests;
-
     // constructor without id
     public User(String numberIdentity, String username, String firstName, String lastName, boolean enabled, String gender, String noHp,
                 String address, String email, String password, String userRole) {

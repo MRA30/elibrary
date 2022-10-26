@@ -7,6 +7,7 @@ import com.elibrary.dto.request.BookRequestdto;
 import com.elibrary.dto.response.BookResponse;
 import com.elibrary.dto.response.ResponseData;
 import com.elibrary.services.BookService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -20,12 +21,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/books")
+@RequiredArgsConstructor
 public class BookController {
     
-    @Autowired
-    private BookService bookService;
+    private final BookService bookService;
 
-    @PostMapping("/employee/add")
+    @PostMapping
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<BookResponse>> addBook(@Valid @RequestBody BookRequestdto bookRequestdto) throws CategoryException, BusinessNotFound {
         Map<String, String> messagesList = new HashMap<>();
@@ -52,7 +53,7 @@ public class BookController {
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookResponse));
     }
 
-    @PutMapping("/employee/update/{id}")
+    @PutMapping("/{id}")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<BookResponse>> updateBook(@PathVariable("id") long id, @Valid @RequestBody BookRequestdto request) throws BusinessNotFound, CategoryException {
         Map<String, String> messagesList = new HashMap<>();
@@ -61,7 +62,7 @@ public class BookController {
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, bookResponse));
     }
 
-    @DeleteMapping("/employee/{id}")
+    @DeleteMapping("/{id}")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<?>> deleteBook(@PathVariable("id") long id) throws BusinessNotFound {
         Map<String, String> messagesList = new HashMap<>();
@@ -70,7 +71,7 @@ public class BookController {
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
     }
 
-    @DeleteMapping("/employee/delete/{id}")
+    @DeleteMapping("/delete/{id}")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<?>> deleteBookPermanently(@PathVariable("id") long id) throws BusinessNotFound {
         Map<String, String> messagesList = new HashMap<>();

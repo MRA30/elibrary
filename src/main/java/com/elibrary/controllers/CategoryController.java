@@ -7,6 +7,7 @@ import com.elibrary.dto.request.CategoryRequest;
 import com.elibrary.dto.response.CategoryResponse;
 import com.elibrary.dto.response.ResponseData;
 import com.elibrary.services.CategoryService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +21,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/categories")
+@RequiredArgsConstructor
 public class CategoryController {
 
-    @Autowired
-    private CategoryService categoryService;
+    private final CategoryService categoryService;
 
-    @PostMapping("/employee/add")
+    @PostMapping
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<CategoryResponse>> addCategory(@Valid @RequestBody CategoryRequest request) throws CategoryException {
         Map<String, String> messagesList = new HashMap<>();
@@ -34,7 +35,7 @@ public class CategoryController {
         return ResponseEntity.status(HttpStatus.OK).body(new ResponseData<>(true, messagesList, categoryResponse));
     }
 
-    @PutMapping("/employee/update/{id}")
+    @PutMapping("/{id}")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<CategoryResponse>> updateCategory(@Valid @PathVariable("id") Long id, @Valid @RequestBody CategoryRequest request) throws BusinessNotFound, CategoryException {
         Map<String, String> messagesList = new HashMap<>();
@@ -43,7 +44,7 @@ public class CategoryController {
             return ResponseEntity.status(HttpStatus.OK).body(new ResponseData<>(true, messagesList, categoryResponse));
     }
 
-    @GetMapping("/employee")
+    @GetMapping
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<List<CategoryResponse>>> getAllCategories(@RequestParam(defaultValue = "") String search){
         Map<String, String> messagesList = new HashMap<>();
@@ -56,7 +57,7 @@ public class CategoryController {
         }
     }
 
-    @DeleteMapping("employee/{id}")
+    @DeleteMapping("/{id}")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<CategoryResponse>> deleteCategory(@PathVariable("id") long id) throws BusinessNotFound {
         Map<String, String> messagesList = new HashMap<>();

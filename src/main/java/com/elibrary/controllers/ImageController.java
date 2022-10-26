@@ -7,6 +7,7 @@ import com.elibrary.dto.response.ResponseData;
 import com.elibrary.services.AmazonS3Service;
 import com.elibrary.services.ImageService;
 import com.elibrary.services.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
@@ -25,16 +26,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/images")
+@RequiredArgsConstructor
 public class ImageController {
 
-    @Autowired
-    private ImageService imageService;
+    private final ImageService imageService;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private AmazonS3Service amazonS3Service;
+    private final AmazonS3Service amazonS3Service;
 
     @GetMapping("/{image}")
     public void getImage(@PathVariable String image, HttpServletResponse response) throws IOException {
@@ -42,7 +41,7 @@ public class ImageController {
         StreamUtils.copy(amazonS3Service.downloadFile(image), response.getOutputStream());
     }
 
-    @PostMapping("/upload/user")
+    @PostMapping("/user")
     @RolesAllowed("member")
     public ResponseEntity<ResponseData<?>> uploadImageUser(@RequestParam("image") MultipartFile image, Principal principal) throws IOException {
         Map<String, String> messagesList = new HashMap<>();
@@ -53,7 +52,7 @@ public class ImageController {
         return ResponseEntity.ok(new ResponseData<>(true, messagesList, null));
     }
 
-    @PostMapping("/upload/book/{id}")
+    @PostMapping("/book/{id}")
     @RolesAllowed("employee")
     public ResponseEntity<ResponseData<?>> uploadImageBook(@RequestParam("image") MultipartFile image, @PathVariable("id") long id) throws IOException, BusinessNotFound {
         Map<String, String> messagesList = new HashMap<>();

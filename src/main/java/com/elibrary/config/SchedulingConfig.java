@@ -3,6 +3,7 @@ package com.elibrary.config;
 import com.elibrary.model.entity.User;
 import com.elibrary.services.UserService;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
@@ -14,13 +15,12 @@ import java.util.List;
 @Configuration
 @EnableScheduling
 @ConditionalOnProperty(name = "scheduling.enabled", matchIfMissing = true)
+@RequiredArgsConstructor
 public class SchedulingConfig {
 
-    @Autowired
-    private OneSignalConfig oneSignalConfig;
+    private final OneSignalConfig oneSignalConfig;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
 
     @Scheduled(cron = "0 0 7 * * *")

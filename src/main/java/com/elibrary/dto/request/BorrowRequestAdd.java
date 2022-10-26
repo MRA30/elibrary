@@ -11,10 +11,10 @@ public class BorrowRequestAdd {
     
     private Long id;
 
-    @NotNull(message = "Book id must not be null")
+    @Size(min = 1, message = "Book must be selected")
     private long bookId;
 
-    @NotNull(message = "User id is required")
+    @Size(min = 1, message = "User must be selected")
     private long userId;
 
     private String description;

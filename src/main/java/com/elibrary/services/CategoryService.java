@@ -7,6 +7,7 @@ import com.elibrary.dto.response.CategoryResponse;
 import com.elibrary.model.entity.Category;
 import com.elibrary.model.repos.CategoryRepo;
 import com.elibrary.model.specification.CategorySpecification;
+import lombok.RequiredArgsConstructor;
 import org.checkerframework.checker.nullness.Opt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
@@ -20,13 +21,12 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class CategoryService {
 
-    @Autowired
-    private CategoryRepo categoryRepo;
+    private final CategoryRepo categoryRepo;
 
-    @Autowired
-    private CategorySpecification categorySpecification;
+    private final CategorySpecification categorySpecification;
 
     public Category save(Category category) {
         if(category.getId() != null) {
